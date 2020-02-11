@@ -1,7 +1,7 @@
 # SeeKAT multibeam localiser
 Requires python 2
 
-• Reads in list of detections (RA,Dec + S/N). 
+• Reads in list of detections (RA,Dec,S/N). 
 
 • Reads in configuration file with boresight coordinates, time of observation, and antenna configuration. Then generates the MeerKAT PSF using mosaic.
 
