@@ -10,5 +10,7 @@ Requires python 2
 • Adds probability distributions for each pair of beams to create a localisation likelihood map.
 
 Usage: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
-        OR
-       python SeeKAT.py -f {coordinates file} -p {.fits file} --c {.json file}
+
+OR
+
+python SeeKAT.py -f {coordinates file} -p {.fits file} --c {.json file}
