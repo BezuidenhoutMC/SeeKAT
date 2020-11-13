@@ -1,0 +1,12 @@
+Usage example: python tilesim.py --ants antenna.csv --freq 1.284e9 --source 4:52:34.11 -17:59:23.4 --datetime 2020.07.16 11:24:17.802 --beamnum 384 --verbose --overlap 0.95 --resolution 1 --size 1000 --subarray 000,001,002,003,004,006,007,008,009,011,012,013,014,015,016,017,018,019,020,021,022,023,024,026,027,029,030,031
+
+where the parameters are:
+--source The boresight coordinates of the pointing 
+--datetime The date and time of the observation. Note that this is at the moment when the beams were tiled on the sky, not the time of detection of the pulse.
+--beamnum Number of coherent beams in the tiling.
+--overlap The fractional sensitivity level at which the beams were made to overlap.
+--resolution The number of arcseconds each pixel of the PSF represents. 1 arcsecond/pixel is the finest resolution possible.
+--size Makes the PSF 1000 x 1000 pixels large. Increase this to include further out sidelobes.
+--subarray A list of the antennas that were used in the observation. They correspond to entries in antenna.csv.
+
+This will output a .fits file to use with SeeKAT.
