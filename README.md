@@ -15,4 +15,4 @@ OR
 
 python SeeKAT.py -f {coordinates file} -p {.fits file} --c {.json file}
 
-For more info see https://docs.google.com/document/d/102t90nL9pWn0I7aAAHnaN25Z9KS-6o4EVq6FerdN1Zc/edit
+For more info see https://docs.google.com/document/d/102t90nL9pWn0I7aAAHnaN25Z9KS-6o4EVq6FerdN1Zc/edit?usp=sharing
