@@ -20,6 +20,16 @@ import matplotlib.patches as patches
 
 
 def parseOptions(parser):
+	'''Options:
+	-f	Input file with each line a different CB detection.
+		Should have 3 columns: RA (h:m:s), Dec (d:m:s), S/N
+	-p	PSF of a CB in fits format
+	--o	Fractional sensitivity level at which CBs are tiled to overlap
+	--r	Resolution of PSF in units of arcseconds per pixel
+	--n	Number of beams to consider when creating overlap contours. Will
+		pick the specified number of beams with the highest S/N values.
+	'''
+
 	parser.add_argument('-l', dest='locFile', 
 				nargs = 1, 
 				type = str, 
@@ -103,7 +113,7 @@ if __name__ == "__main__":
         fullbandLikelihood /= np.amax(fullbandLikelihood)
 
     
-    Splot.likelihoodPlot(fullbandLikelihood)
+    Splot.likelihoodPlot(ax,fullbandLikelihood)
     max_deg = []
     max_loc = np.where(likelihood==np.amax(likelihood))
     #max_loc =  np.transpose(max_loc)
