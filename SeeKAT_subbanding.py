@@ -5,7 +5,7 @@
 import SK_utils as ut
 import SK_coordinates as co
 import SK_plotting as Splot
-import SeeKAT_v5 as SK
+import SeeKAT as SK
 
 import argparse
 import numpy as np
@@ -20,16 +20,6 @@ import matplotlib.patches as patches
 
 
 def parseOptions(parser):
-	'''Options:
-	-f	Input file with each line a different CB detection.
-		Should have 3 columns: RA (h:m:s), Dec (d:m:s), S/N
-	-p	PSF of a CB in fits format
-	--o	Fractional sensitivity level at which CBs are tiled to overlap
-	--r	Resolution of PSF in units of arcseconds per pixel
-	--n	Number of beams to consider when creating overlap contours. Will
-		pick the specified number of beams with the highest S/N values.
-	'''
-
 	parser.add_argument('-l', dest='locFile', 
 				nargs = 1, 
 				type = str, 
