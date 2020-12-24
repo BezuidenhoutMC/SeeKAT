@@ -46,17 +46,23 @@ def make_ticks(array_width,array_height,w,fineness):
 	plt.xticks(ticks[0], ra_deg,rotation=40,fontsize=8)
 	plt.yticks(ticks[1], dec_deg,fontsize=8)
 
-def likelihoodPlot(likelihood):
+def likelihoodPlot(ax,likelihood):
 	'''
 	Creates the localisation plot
 	'''
 
 	plt.imshow(likelihood,origin='lower',cmap='inferno')
+
 	cbar = plt.colorbar()
 	cbar.ax.set_ylabel('Localisation probability')
 	plt.scatter(np.where(likelihood==np.amax(likelihood))[1],np.where(likelihood==np.amax(likelihood))[0],marker='v',c='cyan')
-	plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
-	plt.contour(likelihood,levels=[0.68],zorder=800,colors='lime')
+#	plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
+#	plt.contour(likelihood,levels=[0.68],zorder=800,colors='lime')
+	#plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
+	plt.contour(likelihood,levels=[0.32],zorder=800,colors='lime')
 
 	plt.xlabel('RA ($^\circ$)')
 	plt.ylabel('Dec ($^\circ$)')
+	
+	#ax.set_xlim(450,670)
+	#ax.set_ylim(450,670)

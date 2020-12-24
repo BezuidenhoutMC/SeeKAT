@@ -67,10 +67,10 @@ def parseOptions(parser):
 
 
 def make_plot(array_height,array_width,c,psf_ar,options,data):
-
+    
     sum_threshold = ut.get_best_pairs(data,options.npairs[0])   # Only beam pairs with S/N summing to above this
                                                                 # number will be used for localisation
-    
+
     full_ar = np.zeros((array_height,array_width))
 
     likelihood = np.zeros((array_height,array_width))
@@ -85,18 +85,20 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
         ra_end = int(c.ra.px[i])+int(psf_ar.shape[0])/2
 
         beam_ar[dec_start : dec_end,ra_start : ra_end] = psf_ar
-        plt.contour(beam_ar,levels=[options.overlap],colors='white') # shows beam sizes
+        plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed') # shows beam sizes
 
         full_ar = np.maximum(full_ar,beam_ar)
 
         for j in range(0,len(c)):
 
-            stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (i+1,j+1,len(c)))
+            stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
             stdout.flush()
             if i!=j and data["SN"][i]+data["SN"][j] >= sum_threshold:
+                #f, ax = plt.subplots()
 
-                plt.scatter(c.ra.px[i],c.dec.px[i],color='magenta')
-                plt.scatter(c.ra.px[j],c.dec.px[j],color='magenta')
+                plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
+                #plt.scatter(c.ra.px[i],c.dec.px[i],color='magenta')
+                #plt.scatter(c.ra.px[j],c.dec.px[j],color='magenta')
                 comparison_ar = np.zeros((array_height,array_width))
 
                 dec_start = int(c.dec.px[j])-int(psf_ar.shape[1])/2
@@ -107,13 +109,17 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
                 comparison_ar[dec_start : dec_end,
                     ra_start : ra_end] = psf_ar
 
-                plt.contour(comparison_ar,levels=[options.overlap],colors='white')
+                plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed')
+                plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed')
 
                 beam_snr = data["SN"][i]
                 comparison_snr = data["SN"][j]
 
                 likelihood = localise(beam_snr,comparison_snr,beam_ar,comparison_ar,likelihood)
-
+                #Splot.make_ticks(array_width,array_height,w,fineness=40)
+                #Splot.likelihoodPlot(ax,likelihood)
+                #plt.show()
+                #plt.savefig('Frame%d_%d' % (i,j),dpi=300)
     #plt.imshow(full_ar,origin='lower',cmap='inferno')
     #plt.show()	
     likelihood /= np.amax(likelihood)
@@ -161,10 +167,10 @@ if __name__ == "__main__":
         Splot.plot_known(w,options.source[0])
 
     Splot.make_ticks(array_width,array_height,w,fineness=100)
-    
+                                                                    
     likelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
     
-    Splot.likelihoodPlot(likelihood)
+    Splot.likelihoodPlot(ax,likelihood)
     max_deg = []
     max_loc = np.where(likelihood==np.amax(likelihood))
     #max_loc = np.transpose(max_loc)
@@ -174,5 +180,4 @@ if __name__ == "__main__":
             max_deg.append(pix2deg(m,w)[0])
         print '\nMaximum likelihood at coordinates:'
         print max_deg[0]
-
     plt.show()

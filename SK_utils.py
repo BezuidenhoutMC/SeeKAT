@@ -54,10 +54,7 @@ def readCoords(options):
 		if options.npairs[0] > n_comb:
 			options.npairs[0] = n_comb
 			return data,c,boresightCoord
-	
 
-
-	print c
 	return data,c,boresightCoord
 	
 def readPSF(psf):
@@ -74,7 +71,7 @@ def readPSF(psf):
 	#		but for detections further away from any CB boresight you might want
 	#		to reduce that. 
 
-	psf_ar[psf_ar<0.08] = 0
+	psf_ar[psf_ar<0.05] = 0
 
 	return psf_ar
 
@@ -100,8 +97,8 @@ def get_best_pairs(data,npairs):
 	'''
 	
 	sums = []
-	for i in range (0,len(data)):
-		for j in range (0,len(data)):
+	for i in range (0,len(data["SN"])):
+		for j in range (0,len(data["SN"])):
 			if i !=j:
 				sums.append(data["SN"][i]+data["SN"][j])
 
@@ -122,3 +119,58 @@ def getTicks(array_width,array_height,w,fineness):
 		ticks = [np.arange(0,min(array_width,array_height),min(array_width,array_height)/num_ticks), np.arange(0,min(array_width,array_height),min(array_width,array_height)/num_ticks)]
 	
 	return ticks
+
+def readSubbandingFiles(options):
+	dataLocs = np.genfromtxt(options.locFile[0],
+			delimiter=' ',
+			dtype=None,
+			names=["RA","Dec","fil","SNR"],
+			encoding="ascii")
+
+	dataSNR = np.genfromtxt(options.snrFile[0],
+			delimiter=' ',
+			dtype=None,
+			names=["fil","SNR"],
+			encoding="ascii")
+
+	c = SkyCoord(dataLocs["RA"],dataLocs["Dec"], frame="icrs",unit=(u.hourangle,u.deg))
+	best_cand = np.argsort(dataLocs["SNR"])[-1]
+	n_comb = math.factorial(len(dataLocs))/(math.factorial(2)*math.factorial(len(dataLocs)-2)) #number of beam pairs
+
+	if not options.config:
+		if options.source:
+			[ra,dec] = options.source[0].split(',')
+			b = SkyCoord(ra, dec, frame='icrs',unit=(u.hourangle, u.deg))
+			boresightCoord = [b.ra.deg,b.dec.deg]	
+		else:
+			bs_c = SkyCoord(dataLocs["RA"][best_cand],dataLocs["Dec"][best_cand], frame='icrs', unit=(u.hourangle, u.deg))
+			boresightCoord = [bs_c.ra.deg,bs_c.dec.deg]
+
+		if options.overlap > 1.0 or options.overlap < 0:
+			print("The OVERLAP parameter must be between 0 and 1")
+			exit()
+
+		elif options.npairs[0] > n_comb:
+			options.npairs[0] = n_comb
+			return dataLocs,dataSNR,c,boresightCoord
+		else:
+			return dataLocs,dataSNR,c,boresightCoord
+	else:
+		ra, dec, options.overlap = readJSON(options.config[0])
+		b = SkyCoord(ra, dec, frame='icrs',unit=(u.hourangle, u.deg))
+		boresightCoord = [b.ra.deg,b.dec.deg]
+
+		if options.npairs[0] > n_comb:
+			options.npairs[0] = n_comb
+			return dataLocs,dataSNR,c,boresightCoord
+		
+	return dataLocs,dataSNR,c,boresightCoord
+
+def makeSubbandingPSFcube(psf):
+	psf0 = readPSF(psf[0])
+	psfCube = np.zeros((psf0.shape[0],psf0.shape[1],len(psf)))
+	for i in range(0,len(psf)):
+		psfCube[:,:,i] = readPSF(psf[i])
+		
+	return psfCube
+
