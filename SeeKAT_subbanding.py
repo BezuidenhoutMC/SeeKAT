@@ -94,7 +94,7 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=100)
+    Splot.make_ticks(array_width,array_height,w,fineness=10)
     
     fullbandLikelihood = np.zeros((array_height,array_width))
     for subband in range(0,psfCube.shape[2]):
@@ -108,20 +108,17 @@ if __name__ == "__main__":
         likelihood = SK.make_plot(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
        #plt.imshow(likelihood)
         #plt.show()
-        
-        fullbandLikelihood+=likelihood*subbandData["SN"][subband]
-        fullbandLikelihood /= np.amax(fullbandLikelihood)
 
-    
+        fullbandLikelihood+=likelihood**np.max(subbandData["SN"])
+        fullbandLikelihood /= np.amax(fullbandLikelihood)
+  
     Splot.likelihoodPlot(ax,fullbandLikelihood)
     max_deg = []
-    max_loc = np.where(likelihood==np.amax(likelihood))
-    #max_loc =  np.transpose(max_loc)
-    print '\n'
-    if len(max_loc) > 2:
-        for m in max_loc:
-            max_deg.append(pix2deg(m,w)[0])
-        print '\nMaximum likelihood at coordinates:'
-        print max_deg[0]
+    max_loc = np.where(fullbandLikelihood==np.amax(fullbandLikelihood))
+    if len(max_loc) == 2:
+        max_loc = (max_loc[1],max_loc[0])
+        ut.printCoords(max_loc,w)
+    else:
+        print 'Multiple equally possible locations'
 
     plt.show()

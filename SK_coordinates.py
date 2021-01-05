@@ -90,3 +90,41 @@ def pix2deg(pix,w):
     degs = w.all_pix2world(coords_pix,0)
     
     return degs
+
+def convert_coords_IB(c,psf,boresight,res):
+	'''
+	Converts coordinates from degrees to pixels
+	'''
+	### Build WCS 
+	w = wcs.WCS(naxis=2)
+	w.wcs.crpix = [0,0]
+	step = res/3600.
+	w.wcs.cdelt = np.array([-1*step, step])
+	w.wcs.crval = boresight
+	w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+	coordsDeg = []
+	for i in range(0,len(c)):
+		coordsDeg.append([c.ra.deg[i],c.dec.deg[i]])
+
+	### Convert deg -> pix
+	px = w.all_world2pix(coordsDeg,1)
+	c.ra.px = px[:,0]
+	c.dec.px = px[:,1]	
+
+	boresightPx = w.all_world2pix([boresight],1)[0]
+	### Calculate array size needed to fit all beams
+
+	array_width = psf.shape[0]
+	array_height = psf.shape[1]
+
+
+	### SHIFT coordinates so that boresight is at center of array
+	c.ra.px += 0.5*array_width
+	c.dec.px += 0.5*array_height 
+	w.wcs.crpix = [0.5*array_width,0.5*array_height]
+
+	#plt.scatter(c.ra.px,c.dec.px,color='lime')
+	#plt.show()
+
+	return c,w

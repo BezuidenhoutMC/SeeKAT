@@ -58,8 +58,10 @@ def likelihoodPlot(ax,likelihood):
 	plt.scatter(np.where(likelihood==np.amax(likelihood))[1],np.where(likelihood==np.amax(likelihood))[0],marker='v',c='cyan')
 #	plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
 #	plt.contour(likelihood,levels=[0.68],zorder=800,colors='lime')
-	#plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
-	plt.contour(likelihood,levels=[0.32],zorder=800,colors='lime')
+#	plt.contour(likelihood,levels=[0.9],zorder=800,colors='cyan')
+#	plt.contour(likelihood,levels=[0.32],zorder=800,colors='lime')
+	plt.contour(likelihood,levels=[1-np.std(likelihood)],zorder=800,colors='cyan')
+	plt.contour(likelihood,levels=[1-2*np.std(likelihood)],zorder=800,colors='lime')
 
 	plt.xlabel('RA ($^\circ$)')
 	plt.ylabel('Dec ($^\circ$)')

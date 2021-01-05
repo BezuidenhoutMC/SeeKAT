@@ -90,7 +90,6 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
         full_ar = np.maximum(full_ar,beam_ar)
 
         for j in range(0,len(c)):
-
             stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
             stdout.flush()
             if i!=j and data["SN"][i]+data["SN"][j] >= sum_threshold:
@@ -166,18 +165,17 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=100)
-                                                                    
+    Splot.make_ticks(array_width,array_height,w,fineness=50)
+    
     likelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
     
     Splot.likelihoodPlot(ax,likelihood)
     max_deg = []
     max_loc = np.where(likelihood==np.amax(likelihood))
-    #max_loc = np.transpose(max_loc)
-    print '\n'
-    if len(max_loc) > 2:
-        for m in max_loc:
-            max_deg.append(pix2deg(m,w)[0])
-        print '\nMaximum likelihood at coordinates:'
-        print max_deg[0]
+    
+    if len(max_loc) == 2:
+        max_loc = (max_loc[1],max_loc[0])
+        ut.printCoords(max_loc,w)
+    else:
+        print 'Multiple equally possible locations'
     plt.show()
