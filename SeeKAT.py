@@ -68,21 +68,21 @@ def parseOptions(parser):
 
 def make_plot(array_height,array_width,c,psf_ar,options,data):
     
-    sum_threshold = ut.get_best_pairs(data,options.npairs[0])   # Only beam pairs with S/N summing to above this
+    sum_threshold = ut.get_best_pairs(data,int(options.npairs[0]))   # Only beam pairs with S/N summing to above this
                                                                 # number will be used for localisation
 
     full_ar = np.zeros((array_height,array_width))
 
-    likelihood = np.zeros((array_height,array_width))
+    loglikelihood = np.zeros((array_height,array_width))
 
     for i in range(0,len(c)):
         #print i
         beam_ar = np.zeros((array_height,array_width))
 
-        dec_start = int(c.dec.px[i])-int(psf_ar.shape[1])/2
-        dec_end = int(c.dec.px[i])+int(psf_ar.shape[1])/2
-        ra_start = int(c.ra.px[i])-int(psf_ar.shape[0])/2
-        ra_end = int(c.ra.px[i])+int(psf_ar.shape[0])/2
+        dec_start = int(c.dec.px[i])-int(psf_ar.shape[1]/2)
+        dec_end = int(c.dec.px[i])+int(psf_ar.shape[1]/2)
+        ra_start = int(c.ra.px[i])-int(psf_ar.shape[0]/2)
+        ra_end = int(c.ra.px[i])+int(psf_ar.shape[0]/2)
 
         beam_ar[dec_start : dec_end,ra_start : ra_end] = psf_ar
         plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed') # shows beam sizes
@@ -92,62 +92,59 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
         for j in range(0,len(c)):
             stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
             stdout.flush()
-            if i!=j and data["SN"][i]+data["SN"][j] >= sum_threshold:
-                #f, ax = plt.subplots()
+            if i<j and data["SN"][i]+data["SN"][j] >= sum_threshold:
 
                 plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
-                #plt.scatter(c.ra.px[i],c.dec.px[i],color='magenta')
-                #plt.scatter(c.ra.px[j],c.dec.px[j],color='magenta')
+
                 comparison_ar = np.zeros((array_height,array_width))
 
-                dec_start = int(c.dec.px[j])-int(psf_ar.shape[1])/2
-                dec_end = int(c.dec.px[j])+int(psf_ar.shape[1])/2
-                ra_start = int(c.ra.px[j])-int(psf_ar.shape[0])/2
-                ra_end = int(c.ra.px[j])+int(psf_ar.shape[0])/2
+                dec_start = int(c.dec.px[j])-int(psf_ar.shape[1]/2)
+                dec_end = int(c.dec.px[j])+int(psf_ar.shape[1]/2)
+                ra_start = int(c.ra.px[j])-int(psf_ar.shape[0]/2)
+                ra_end = int(c.ra.px[j])+int(psf_ar.shape[0]/2)
 
-                comparison_ar[dec_start : dec_end,
-                    ra_start : ra_end] = psf_ar
+                comparison_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
 
-                plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed')
-                plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed')
+                plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5)
+                plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5)
 
                 beam_snr = data["SN"][i]
                 comparison_snr = data["SN"][j]
 
-                likelihood = localise(beam_snr,comparison_snr,beam_ar,comparison_ar,likelihood)
-                #Splot.make_ticks(array_width,array_height,w,fineness=40)
-                #Splot.likelihoodPlot(ax,likelihood)
-                #plt.show()
-                #plt.savefig('Frame%d_%d' % (i,j),dpi=300)
+                loglikelihood = localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood)
+
+
+    #loglikelihood /= np.amax(loglikelihood)
     #plt.imshow(full_ar,origin='lower',cmap='inferno')
-    #plt.show()	
-    likelihood /= np.amax(likelihood)
+
+    return loglikelihood
+
+
+def localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood):
+    '''
+    Plots contours where the ratio of the S/N detected in each 
+    beam to the highest-S/N detection matches the ratio of 
+    those beams' PSFs. 1-sigma errors are also drawn.
+    '''
+
+    ratio_ar = np.divide(beam_ar,comparison_ar)
+
+    ratio_snr = beam_snr/comparison_snr		
+
+    #error = (1/beam_snr) + (1/comparison_snr)   # Old error formula, Gaussian approximation
+    error = (1.0 / comparison_snr) + (beam_snr / comparison_snr**2)  # Full error formula, https://en.wikipedia.org/wiki/Ratio_distribution
+
+    lower_bound = ratio_snr - error
+    upper_bound = ratio_snr + error
     
-    return likelihood
+    gaussian = np.exp(-np.power(ratio_ar - ratio_snr, 2.) / (2 * np.power(error, 2.)))
+    gaussian /= 2.0*np.pi*error
+    gaussian = np.nan_to_num(gaussian)
+    gaussian = np.log(gaussian)
 
+    loglikelihood += gaussian
 
-def localise(beam_snr,comparison_snr,beam_ar,comparison_ar,likelihood):
-	'''
-	Plots contours where the ratio of the S/N detected in each 
-	beam to the highest-S/N detection matches the ratio of 
-	those beams' PSFs. 1-sigma errors are also drawn.
-	'''
-    
-	ratio_ar = np.divide(beam_ar,comparison_ar)
-
-	ratio_snr = beam_snr/comparison_snr		
-
-	error = (1/beam_snr) + (1/comparison_snr)
-				
-	lower_bound = ratio_snr - error
-	upper_bound = ratio_snr + error
-	
-	gaussian = np.exp(-np.power(ratio_ar - ratio_snr, 2.) / (2 * np.power(error, 2.)))
-	gaussian = np.nan_to_num(gaussian)	
-
-	likelihood += gaussian
-
-	return likelihood
+    return loglikelihood
 
 if __name__ == "__main__":
     
@@ -165,17 +162,22 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=50)
+    Splot.make_ticks(array_width,array_height,w,fineness=20)
     
-    likelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
-    
-    Splot.likelihoodPlot(ax,likelihood)
+    loglikelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
+
+    Splot.likelihoodPlot(ax,loglikelihood)
     max_deg = []
-    max_loc = np.where(likelihood==np.amax(likelihood))
+    max_loc = np.where(loglikelihood==np.amax(loglikelihood))
     
     if len(max_loc) == 2:
         max_loc = (max_loc[1],max_loc[0])
         ut.printCoords(max_loc,w)
     else:
-        print 'Multiple equally possible locations'
+        print('Multiple equally possible locations')
+    
+    #ax.set_xlim(min(c.ra.px) -25 ,max(c.ra.px) + 25)
+    #ax.set_ylim(min(c.dec.px) -25 ,max(c.dec.px) + 25)
+
+    plt.savefig(options.file[0]+'.png',dpi=300)
     plt.show()
