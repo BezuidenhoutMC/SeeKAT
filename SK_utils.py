@@ -73,7 +73,7 @@ def readPSF(psf):
 	#		but for detections further away from any CB boresight you might want
 	#		to reduce that. 
 
-	psf_ar[psf_ar<0.1] = 0
+	psf_ar[psf_ar<0.08] = 0
 
 	return psf_ar
 
@@ -97,7 +97,6 @@ def get_best_pairs(data,npairs):
 	If we want to do the localisation using only the N highest-S/N beam pairs
 	for the sake of time, this determines which ones to use.
 	'''
-	
 	sums = []
 	for i in range (0,len(data["SN"])):
 		for j in range (0,len(data["SN"])):
@@ -180,48 +179,47 @@ def printCoords(max_loc,w):
     max_deg = []
     max_deg.append(co.pix2deg(max_loc,w)[0])
     max = SkyCoord(max_deg,unit='deg')
-    print '\nMaximum likelihood at coordinates:'
-    print max.ra.deg[0],max.dec.deg[0],'/'
-    print max.ra.to_string(u.hour)[0],max.dec.to_string(u.degree,alwayssign=True)[0]
+    print('\nMaximum likelihood at coordinates:')
+    print(max.ra.deg[0],max.dec.deg[0])
+    print(max.ra.to_string(u.hour)[0],max.dec.to_string(u.degree,alwayssign=True)[0])
+
+    #text_file = open("locCoords.txt", "a")
+    #text_file.write(str(max.ra.deg[0]) + ' ' + str(max.dec.deg[0]) + '\n')
+    #text_file.close()
 
 
 def stretch_IB(ib_psf,res):
-        from scipy.interpolate import griddata
+    from scipy.interpolate import griddata
 
-	ib_size = 10 #deg x 10 deg
+    ib_size = 10 #deg x 10 deg
 
-	# cut the IB psf down by this factor to remove some of the padding:
-	cutfactor = 4.0 
-	cut = ib_psf.shape[0]/(2*cutfactor)
-	cut1 = int(ib_psf.shape[0]/2.0 - cut)
-	cut2 = int(ib_psf.shape[0]/2.0 + cut)
-	ib_psf = ib_psf[cut1:cut2,cut1:cut2]
-	ib_size = int(ib_size/cutfactor)
+    # cut the IB psf down by this factor to remove some of the padding:
+    cutfactor = 4.0 
+    cut = ib_psf.shape[0]/(2*cutfactor)
+    cut1 = int(ib_psf.shape[0]/2.0 - cut)
+    cut2 = int(ib_psf.shape[0]/2.0 + cut)
+    ib_psf = ib_psf[cut1:cut2,cut1:cut2]
+    ib_size = int(ib_size/cutfactor)
 
-	res_deg = res/3600
-	ib_size_px = int(ib_size/res_deg)
-	#print(ib_size_px) # this is the size of the IB in pixels given the resolution of the CB
-	
+    res_deg = res/3600
+    ib_size_px = int(ib_size/res_deg)
+    #print(ib_size_px) # this is the size of the IB in pixels given the resolution of the CB
 
-	points = np.zeros((ib_psf.shape[0]*ib_psf.shape[1],2))
-	values = []
-	n=0
-	
-	for i in range (0,ib_psf.shape[0]):
-		for j in range(0,ib_psf.shape[1]):
-			points[n] = [i, j]
-			values.append(ib_psf[i,j])
-			n+=1
 
-	extent = float(ib_psf.shape[0] - 1)
-	grid_x,grid_y = np.mgrid[0:extent:extent/ib_size_px,0:extent:extent/ib_size_px]
-	model_prim = griddata(points,values,(grid_x,grid_y), method='cubic')
-	
-#	plt.imshow(model_prim,origin='lower')
-	#plt.show()
+    points = np.zeros((ib_psf.shape[0]*ib_psf.shape[1],2))
+    values = []
+    n=0
 
-	#plt.contour(model_prim,levels=[0.5],colors='red')
-	#plt.contour(model_prim,levels=[0.1],colors='green')
-	return model_prim,ib_size_px
+    for i in range (0,ib_psf.shape[0]):
+        for j in range(0,ib_psf.shape[1]):
+            points[n] = [i, j]
+            values.append(ib_psf[i,j])
+            n+=1
+
+    extent = float(ib_psf.shape[0] - 1)
+    grid_x,grid_y = np.mgrid[0:extent:extent/ib_size_px,0:extent:extent/ib_size_px]
+    model_prim = griddata(points,values,(grid_x,grid_y), method='cubic')
+
+    return model_prim,ib_size_px
 
 
