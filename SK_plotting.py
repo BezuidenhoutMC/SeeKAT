@@ -81,12 +81,12 @@ def likelihoodPlot(ax,loglikelihood):
     if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.6827))[0]) != 0:
         ind_1sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.6827))[0][0]
         val_1sigma = likelihood_flat_sorted[ind_1sigma]
-        #plt.contour(likelihood,levels=[val_1sigma],zorder=800,colors='cyan')
+        plt.contour(likelihood,levels=[val_1sigma],zorder=800,colors='cyan')
 
     if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0]) != 0:
         ind_2sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0][0]
         val_2sigma = likelihood_flat_sorted[ind_2sigma]
-        #plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
+        plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
 
     #if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0]) != 0:
         #ind_3sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0][0]
