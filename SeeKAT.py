@@ -147,7 +147,6 @@ def localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood):
     return loglikelihood
 
 if __name__ == "__main__":
-    
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
     
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=20)
+    Splot.make_ticks(array_width,array_height,w,fineness=40)
     
     loglikelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
 
@@ -176,8 +175,11 @@ if __name__ == "__main__":
     else:
         print('Multiple equally possible locations')
     
-    #ax.set_xlim(min(c.ra.px) -25 ,max(c.ra.px) + 25)
-    #ax.set_ylim(min(c.dec.px) -25 ,max(c.dec.px) + 25)
+    #ax.set_xlim(min(c.ra.px) -15 ,max(c.ra.px) + 15)
+    #ax.set_ylim(min(c.dec.px) -15 ,max(c.dec.px) + 15)
+    #ax.set_xlim(max_loc[0]-7,max_loc[0]+7)
+    #ax.set_ylim(max_loc[1]-7,max_loc[1]+7)
+
 
     plt.savefig(options.file[0]+'.png',dpi=300)
     plt.show()
