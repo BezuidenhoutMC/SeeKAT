@@ -1,5 +1,4 @@
 # SeeKAT multibeam localiser
-Requires python 2
 
 • Reads in list of detections (RA,Dec,S/N) and PSF. 
 
