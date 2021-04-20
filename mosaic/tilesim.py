@@ -20,11 +20,10 @@ def makeKatPointAntenna(antennaString):
     for antenna in antennaString:
         antkat = katpoint.Antenna(antenna)
         antennaKat.append(antkat)
-
     return antennaKat
 
 def creatBeamMatrix(antennaCoords, sourceCoord, observeTime,
-        frequencies, duration, overlap, beamNum, subarray):
+        frequencies, duration, overlap, beamNum, size, resolution, subarray):
 
     if subarray != []:
         antennaKat = makeKatPointAntenna([antennaCoords[int(ant)] for ant in subarray])
@@ -37,25 +36,18 @@ def creatBeamMatrix(antennaCoords, sourceCoord, observeTime,
     reference = makeKatPointAntenna(
             ["ref, -30:42:39.8, 21:26:38.0, 1035.0",])[0]
     psf = PsfSim(antennaKat, frequencies[0])
-    beamShape = psf.get_beam_shape(boresight, observeTime)
+    beamShape = psf.get_beam_shape(boresight, observeTime, size*size, resolution)
     beamShape.plot_psf("beamWithFit.png", shape_overlay=True)
-    # beamShape.plot_psf("beam.png", shape_overlay=False)
-    # beamShape.psf.write_fits('psf.fits')
-    # beamShape.plot_interferometry("interferometry.png")
+    beamShape.psf.write_fits('psf.fits')
+    beamShape.plot_interferometry("interferometry.png")
 
 
-    # margin = max(int(beamNum * 0.25), 16)
     tiling = generate_nbeams_tiling(
             beamShape, beamNum, overlap = overlap)
     tiling_coordinats = tiling.get_equatorial_coordinates()
     tiling.plot_tiling("tiling.svg", index = True)
     np.savetxt("tilingCoord", tiling_coordinats)
     np.savetxt("tilingCoord_pixel", tiling.coordinates)
-
-    # targets = DelayPolynomial.make_katpoint_target(tiling_coordinats)
-    # delay = DelayPolynomial(antennaKat, beamShape.bore_sight, targets, reference)
-    # polynomials = delay.get_delay_polynomials(observeTime, duration)
-    # np.save("polynomials", polynomials)
 
 
 def parseOptions(parser):
@@ -87,7 +79,7 @@ def parseOptions(parser):
     frequencies = [1.4e9,]
     paras = None
     plotting = False
-    resolution = 10 #in arcsecond
+    resolution = None
     size = 20
     zoom = 1
     duration = 0
@@ -131,6 +123,13 @@ def parseOptions(parser):
         # logging.warning("frame not specified, default to RADEC")
         frame = 'RADEC'
 
+
+    if args.size is not None:
+        size = int(args.size[0])
+
+    if args.resolution is not None:
+        resolution = int(args.resolution[0])
+
     if args.duration is not None:
         duration = int(args.duration[0])
     if args.beamnum is not None:
@@ -160,7 +159,6 @@ def parseOptions(parser):
         logger.setLevel(logging.INFO)
 
 
-    # paras = antennaCoords, sourceCoord, frame, observeTime, resolution, size, zoom
     paras  = {"antennaCoords": antennaCoords,
         "sourceCoord": sourceCoord,
         "observeTime": observeTime,
@@ -168,6 +166,8 @@ def parseOptions(parser):
         "duration":duration,
         "overlap":overlap,
         "beamNum":beamnum,
+        "size":size,
+        "resolution":resolution,
         "subarray":subarray}
 
     creatBeamMatrix(**paras)

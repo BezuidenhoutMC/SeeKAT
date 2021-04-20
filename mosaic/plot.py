@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.animation as animation
@@ -71,8 +71,8 @@ def plotPackedBeam(coordinates, angle, axis1, axis2, boresight, equaltorial_rang
     circle.fill = False
     axis.add_artist(circle)
     margin = beamRadius*1.3*scope
-    axis.set_xlim(gridCenter[0]-2*margin, gridCenter[0]+2*margin)
-    axis.set_ylim(gridCenter[1]-2*margin, gridCenter[1]+2*margin)
+    axis.set_xlim(gridCenter[0]-margin, gridCenter[0]+margin)
+    axis.set_ylim(gridCenter[1]-margin, gridCenter[1]+margin)
     beamNum = len(coordinates)
 
     xTicks = FixedLocator([pixel_range[0], 0, pixel_range[1]])

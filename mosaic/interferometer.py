@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-
+#import matplotlib.pyplot as plt
 import coordinate as coord
 from plot import plotBeamContour
 from utilities import normSigma, normInverse
@@ -41,7 +41,6 @@ class InterferometryObservation:
         self.resolution = 1/3600.0
         self.boresightFrame = coord.Boresight.EquatorialFrame
         self.updateBeamCoordinates(self.beamSizeFactor, self.imageDensity, self.gridNumOfDFT)
-
 
     def setInterpolating(self, state):
         if state == True:
@@ -142,7 +141,7 @@ class InterferometryObservation:
                 self.boresightCoord = (float(boresight[0]), float(boresight[1]))
         if frame is not None:
             self.boresightFrame = frame
-
+        
     def getBoreSight(self):
         return self.boresight
 
@@ -185,7 +184,7 @@ class InterferometryObservation:
                 baselines.append([antenna1[0]-antenna2[0],
                         antenna1[1]-antenna2[1],antenna1[2]-antenna2[2]])
             index += 1
-
+        
         return baselines
 
     def updateBeamCoordinates(self, interval, imageDensity, DFTSideLength):
@@ -219,6 +218,7 @@ class InterferometryObservation:
         ur = np.mgrid[0:halfLength:interval, gridNum-halfLength:gridNum:interval]
         bl = np.mgrid[gridNum-halfLength:gridNum:interval, 0:halfLength:interval]
         br = np.mgrid[gridNum-halfLength:gridNum:interval, gridNum-halfLength:gridNum:interval]
+        
         imagesCoord = np.array([
                         np.concatenate((
                         np.concatenate((ul[0].T, ur[0].T)).T,
@@ -226,7 +226,6 @@ class InterferometryObservation:
                         np.concatenate((
                         np.concatenate((ul[1].T, ur[1].T)).T,
                         np.concatenate((bl[1].T, br[1].T)).T)).flatten()])
-
         # imagesCoord = np.array([
                         # np.vstack((
                         # np.hstack((ul[0], ur[0])),
@@ -234,13 +233,12 @@ class InterferometryObservation:
                         # np.vstack((
                         # np.hstack((ul[1], ur[1])),
                         # np.hstack((bl[1], br[1])))).flatten()])
-
+                        
         return imagesCoord
 
 
     def calculateImageLength(self, rotatedProjectedBaselines, waveLength,
             zoomIn, density, gridNum, fixRange = None):
-
         if fixRange is None:
             uMax = np.amax(np.abs(rotatedProjectedBaselines[:,0]))/waveLength
             vMax = np.amax(np.abs(rotatedProjectedBaselines[:,1]))/waveLength
@@ -259,6 +257,7 @@ class InterferometryObservation:
         step = np.deg2rad(imageLength)
         halfGridNum = gridNum/2.
         uvSamples = []
+
         for baseline in rotatedProjectedBaselines:
             # print baseline
             uSlot = int(round(baseline[0]/waveLength*step + halfGridNum - 1))
@@ -269,26 +268,28 @@ class InterferometryObservation:
             # uvSamples.append([gridNum - uSlot - 1, gridNum - vSlot - 1])
             # uvGrids[vSlot][uSlot] = 1
             # uvGrids[-vSlot-1][-uSlot-1] = 1
-
+        
+        #for s in uvSamples:
+        #    plt.scatter(s[0],s[1],s=1,c='blue')
+        #plt.xlabel('U')
+        #plt.ylabel('V')
+        #plt.savefig('uvCoverage.png',dpi=300)
 
         imagesCoord = partialDFTGrid
         # print imagesCoord
         fringeSum = np.zeros(density*density)
         for uv in uvSamples:
             fringeSum = fringeSum + np.exp(1j*np.pi*2*(imagesCoord[1]*uv[0] + imagesCoord[0]*uv[1])/gridNum)
-
         # fringeSum = np.sum(np.exp(1j*np.pi*2./gridNum*np.dot(np.fliplr(uvSamples), imagesCoord)), axis=0)
 
         fringeSum = fringeSum.reshape(density,density)/(len(uvSamples))
+        #base = np.min(fringeSum.real)
 
-        # base = np.min(fringeSum.real)
         image = np.fft.fftshift(np.abs(fringeSum))
-        # image = np.fft.fftshift(fringeSum.real - base)
-
+        #image = np.fft.fftshift(fringeSum.real - base)        
         return image
 
     def performFFT(self, rotatedProjectedBaselines, waveLength, imageLength, gridNum):
-
         def Gaussian2DPDF(x, y, xMean, yMean, xSigma, ySigma):
             return np.exp(-((x-xMean)**2/(2*(xSigma**2)) + (y-yMean)**2/(2*(ySigma**2))))
 
@@ -369,7 +370,6 @@ class InterferometryObservation:
         baselineLengths = coord.distances(rotatedProjectedBaselines)
         baselineMax = np.amax(baselineLengths)
         baselineMin = np.amin(baselineLengths)
-        # print baselineMax, baselineMin
         indexOfMaximum = np.argmax(baselineLengths)
         maxBaselineVector = rotatedProjectedBaselines[indexOfMaximum]
         # rotate vector on a surface https://math.stackexchange.com/questions/1830695/
@@ -383,7 +383,7 @@ class InterferometryObservation:
         # print baselineMax
         minorAxis = np.rad2deg(1.22*waveLength/baselineMax/2.)
         majorAxis = np.rad2deg(1.22*waveLength/perpendicularBaselineMax/2.)
-
+        
         return majorAxis, minorAxis
 
     def constructFitsHeader(self, density, step, boresight):
@@ -395,7 +395,7 @@ class InterferometryObservation:
         CTYPE: name of the coordinate axis
         """
         self.WCS = {}
-        self.WCS['crpix'] = [density/2 -1, density/2 -1]
+        self.WCS['crpix'] = [density/2 +1, density/2 +1]
         self.WCS['cdelt'] = [-step, step]
         self.WCS['crval'] = [boresight[0] - abs(self.WCS['cdelt'][0]),
                              boresight[1] - self.WCS['cdelt'][1]]
@@ -421,11 +421,10 @@ class InterferometryObservation:
         # logger.info("axis1: {:.3g}, axis2: {:.3g}, angle: {:.3f} in pixel plane"
                 # .format(axis1, axis2, angle))
 
-        logger.info("beamshape: width1: {:.3g} arcsec, width2: {:.3g} arcsec in equatorial plane"
+        logger.info("beamshape: width1: {:.5g} arcsec, width2: {:.5g} arcsec, angle: {:.3g} wrt equatorial plane"
                 .format(width1.arcsecond, width2.arcsecond, angle))
 
     def createContour(self, antennas, fileName=None, minAlt=0):
-
 
         self.array = coord.Array("main", antennas, self.arrayReferece)
 
@@ -443,10 +442,9 @@ class InterferometryObservation:
         baselineMax = 1.22*self.waveLength/(beamMinorAxisScale*2)
 
         baselineNum = len(self.baselines)
-        density = self.imageDensity
-        gridNum = self.gridNumOfDFT
+        density = self.imageDensity  #--size
+        gridNum = self.gridNumOfDFT  # 100000.0
         imageLength = gridNum * self.resolution
-
         sidelength = density * self.beamSizeFactor
         windowLength = self.resolution * sidelength
 

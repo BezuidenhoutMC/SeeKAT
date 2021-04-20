@@ -11,7 +11,6 @@ from astropy.io import fits
 import coordinate as coord
 from interferometer import InterferometryObservation
 
-
 class h5Writer:
 
     fileObj = None
@@ -114,6 +113,7 @@ def parseOptions(parser):
     size = 20
     zoom = 1
     frame = 'RADEC'
+
     if args.plot == True:
         plotting = True
         if args.inte == True:

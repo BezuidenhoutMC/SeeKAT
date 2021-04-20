@@ -293,7 +293,7 @@ def trackBorder(image_orig, threshold = 0.3, density = 20, interpolatedLength = 
         image[topRow+1:, :] = filling
         image[:bottomRow, :] = filling
 
-        np.save("/tmp/trackimage2", image)
+        np.save("trackimage", image)
 
 
     return border, trueCenterIndex, maxOverstepValue, image

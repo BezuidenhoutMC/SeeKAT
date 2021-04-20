@@ -14,7 +14,7 @@ class Antenna(object):
         self.name = name
         self.geo = geo
         self.enu = None
-
+        
         grs80 = nv.FrameE(name='GRS80')
         lat, lon, height = geo
         geoPoint = grs80.GeoPoint(latitude=lat,
@@ -38,9 +38,9 @@ class Array(object):
         ecefCoordinates = [antenna.ecef for antenna in antennas]
         enuCoordiantes = convertECEFToENU(ecefCoordinates, reference.ecef, reference.geo)
         for i in range(len(self.antennas)): self.antennas[i].enu = enuCoordiantes[i]
-
+        
         self.baselines = self.createBaselines(self.antennas)
-
+                
     def createBaselines(self, antennas):
          pairs = []
          index = 1
@@ -57,10 +57,9 @@ class Array(object):
         return self.antennas
 
     def getRotatedProjectedBaselines(self, boresight):
-
         localHourAngle = (np.deg2rad(boresight.localSidereTime)
             - np.deg2rad(boresight.equatorial[0]))
-
+        
         baselineCoordiantes = [baseline.enu for baseline in self.baselines]
 
         rotatedENU = rotateENUToEquatorialPlane(baselineCoordiantes,
@@ -81,7 +80,6 @@ class Boresight(object):
         self.name = name
         self.time = time
         self.arrayreference = arrayReference
-
         arrayRefereceLatitude = np.deg2rad(arrayReference.geo[0])
         LSTDeg =  calculateLocalSiderealTime(time, arrayReference.geo[1])
 
@@ -128,7 +126,6 @@ def convertEquatorialToHorizontal(RA, DEC, LST, latitude):
 
     mask = np.sin(LHA) > 0.0
     azimuth[mask] = np.pi*2 - azimuth[mask]
-
     return altitude, azimuth
 
 def convertHorizontalToEquatorial(azimuth, altitude, LST, latitude):
@@ -159,7 +156,6 @@ def getHourAngle(RA, LST):
     return LHA
 
 def projectBaselines(rotatedENU, HA, DEC):
-
     rotationMatrix = np.array([
             [ np.sin(HA),              np.cos(HA),                  0     ],
             [-np.sin(DEC)*np.cos(HA),  np.sin(DEC)*np.sin(HA), np.cos(DEC)],
@@ -186,9 +182,7 @@ def rotateENUToEquatorialPlane(ENU, latitude, azimuth, elevation):
             # [-np.sin(latitude), 0,      np.cos(latitude)]])
 
     lengths = np.sqrt(np.sum(np.square(ENU), axis = 1))
-
     l = latitude
-
     ENU = np.array(ENU)
     epsilon = 0.000000000001
     azimuths = np.arctan2(ENU[:,0], (ENU[:,1] + epsilon))
@@ -203,7 +197,7 @@ def rotateENUToEquatorialPlane(ENU, latitude, azimuth, elevation):
                        np.cos(e) * np.sin(a),
              np.sin(l)*np.sin(e) + np.cos(l)*np.cos(e)*np.cos(a)])
 
-    # rotatedENU = lengths * rotationMatrix
+    #rotatedENU = lengths * rotationMatrix
     rotatedENU = []
 
     # print ENU[:,2]
@@ -211,9 +205,7 @@ def rotateENUToEquatorialPlane(ENU, latitude, azimuth, elevation):
 
     for length, rotates in zip(lengths, rotationMatrix.T):
         rotatedENU.append([length*rotates[0],length*rotates[1],length*rotates[2]])
-
-
-
+    
     # print lengths
     # print rotationMatrix
     # print rotatedENU
@@ -235,16 +227,14 @@ def convertENUToUVW(ENU, waveLength, RA, DEC, LST):
     return UVW
 
 def calculateLocalSiderealTime(TimeInUTC, longitude, displayHour=False):
-
     def calculateDaysSinceJ2000(TimeInUTC):
-
         '''https://en.wikipedia.org/wiki/Epoch_(astronomy)'''
         J2000UTCTime=datetime.datetime(2000, 1, 1, 11,58,56)
         # compareTime=datetime.datetime(TimeInUTC[0], TimeInUTC[1], TimeInUTC[2],
                 # TimeInUTC[3], TimeInUTC[4], TimeInUTC[5])
         timeDiff = TimeInUTC - J2000UTCTime
-        timeDiffInDays = timeDiff.days + timeDiff.seconds/(60.0*60*24) + timeDiff.microseconds/(1000000.0*60.0*60*24)
 
+        timeDiffInDays = timeDiff.days + timeDiff.seconds/(60.0*60*24) + timeDiff.microseconds/(1000000.0*60.0*60*24)
         return timeDiffInDays
 
 
@@ -256,7 +246,6 @@ def calculateLocalSiderealTime(TimeInUTC, longitude, displayHour=False):
     LocalSiderealTime = 100.46 + 0.985647 * daysSinceJ2000 +longitude +\
                     15.0*(TimeInUTC.hour + TimeInUTC.minute/60.0 +\
                     TimeInUTC.second/3600.0 + TimeInUTC.microsecond/1000000.0/3600.0)
-
     LocalSiderealTime %= 360.0
 
     if displayHour == True:
@@ -295,7 +284,6 @@ def epochToDatetime(epoches):
 
 
 def convertGodeticToECEF(geodetics):
-
     '''http://itrf.ensg.ign.fr/faq.php?type=answer#question2'''
     grs80 = nv.FrameE(name='GRS80')
     ecefPoints = np.empty((0,3))
@@ -315,7 +303,6 @@ def convertECEFToENU(ECEF, ECEFReference, GeodeticReference):
             [-np.sin(lon),              np.cos(lon),                  0     ],
             [-np.sin(lat)*np.cos(lon), -np.sin(lat)*np.sin(lon), np.cos(lat)],
             [ np.cos(lat)*np.cos(lon),  np.cos(lat)*np.sin(lon), np.sin(lat)]])
-
     return np.dot(offset, rotationMatrix.T)
 
 def distances(vector):

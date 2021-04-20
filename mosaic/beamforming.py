@@ -73,7 +73,6 @@ class PsfSim(object):
 
         antenna_objects = [coord.Antenna(names[idx], coordinate)
                 for idx, coordinate in enumerate(antenna_coordinates)]
-
         return antenna_objects
 
     @staticmethod
@@ -100,7 +99,7 @@ class PsfSim(object):
         else:
             raise Exception("source are passed in unknown format")
 
-    def get_beam_shape(self, source, time):
+    def get_beam_shape(self, source, time, beam_number = 400, beam_size = None):
         """
         return the beamshape of current oservation parameters
         assuming the beam is roughly a ellipse.
@@ -115,12 +114,15 @@ class PsfSim(object):
         a beamshape object contain properties of semi-major axis,
             semi-mino axis and orientation all in degree
         """
-
         if len(self.antennas) < 3:
-            raise "the number of antennas should be not less then 3"
+            raise "the number of antennas should be not less than 3"
         bore_sight = PsfSim.check_source(source)
         self.observation.setBoreSight(bore_sight)
         self.observation.setObserveTime(time)
+        self.observation.setBeamNumber(beam_number)
+        if beam_size != None:
+		self.observation.setAutoZoom(False)
+		self.observation.setBeamSizeFactor(beam_size)
         self.observation.createContour(self.antennas)
         axisH, axisV, angle, image_range = self.observation.getBeamAxis()
         horizon = np.rad2deg(self.observation.getBoreSight().horizontal)
@@ -301,11 +303,22 @@ class Tiling(object):
                 np.sqrt(np.sum(np.square(self.coordinates), axis = 1)))
         upper_left_pixel = [-maxDistance, maxDistance] # x,y
         bottom_right_pixel = [maxDistance, -maxDistance] # x,y
+
+	#print("ul: "+str(upper_left_pixel))
+	#print("br: "+str(bottom_right_pixel))
+	#print("center: "+str(self.beam_shape.bore_sight.equatorial))
+
         coordinates_equatorial = coord.convert_pixel_coordinate_to_equatorial(
             [upper_left_pixel, bottom_right_pixel], self.beam_shape.bore_sight.equatorial)
         equatorial_range = [
             coordinates_equatorial[0][0], coordinates_equatorial[1][0], # left, right
             coordinates_equatorial[0][1], coordinates_equatorial[1][1]] # up, bottom
+
+	#Tiaan mod
+	width = equatorial_range[1] - equatorial_range[0]
+	height = equatorial_range[3] - equatorial_range[2]
+	print("Size of primary beam: "+str(width) + " deg wide, " + str(height) + " deg heigh.")	
+
         pixel_range = [upper_left_pixel[0], bottom_right_pixel[0], # left, right
                        upper_left_pixel[1], bottom_right_pixel[1]] # up, bottom
         plotPackedBeam(self.coordinates, self.beam_shape.angle, widthH, widthV,

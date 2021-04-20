@@ -228,7 +228,6 @@ def ellipseGrid(beamRadius, axisH, axisV, angle, write=False):
 
 
 
-    # print inCircleCoordinatesRotated.shape
     return inCircleCoordinatesRotated
 
 
