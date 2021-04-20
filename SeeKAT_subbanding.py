@@ -81,8 +81,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
     
-    #data,c,boresight = ut.readCoords(options)
-    
     dataLocs,dataSNR,c,boresight = ut.readSubbandingFiles(options)
     
     psfCube = ut.makeSubbandingPSFcube(options.psf)
@@ -94,9 +92,9 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=10)
+    Splot.make_ticks(array_width,array_height,w,fineness=40)
     
-    fullbandLikelihood = np.zeros((array_height,array_width))
+    fullbandLogLikelihood = np.zeros((array_height,array_width))
     for subband in range(0,psfCube.shape[2]):
         print "\n---Localising in subband %d/%d---" % (subband+1,psfCube.shape[2])
         subbandSNRs = []
@@ -104,17 +102,13 @@ if __name__ == "__main__":
             if line["fil"][-2:] == "."+str(subband):
                 subbandSNRs.append(line["SNR"])
         subbandData = {"SN":np.asarray(subbandSNRs)}
+        loglikelihood = SK.make_plot(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
 
-        likelihood = SK.make_plot(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
-       #plt.imshow(likelihood)
-        #plt.show()
-
-        fullbandLikelihood+=likelihood**np.max(subbandData["SN"])
-        fullbandLikelihood /= np.amax(fullbandLikelihood)
+        fullbandLogLikelihood+=loglikelihood*np.max(subbandData["SN"])
   
-    Splot.likelihoodPlot(ax,fullbandLikelihood)
+    Splot.likelihoodPlot(ax,fullbandLogLikelihood)
     max_deg = []
-    max_loc = np.where(fullbandLikelihood==np.amax(fullbandLikelihood))
+    max_loc = np.where(fullbandLogLikelihood==np.amax(fullbandLogLikelihood))
     if len(max_loc) == 2:
         max_loc = (max_loc[1],max_loc[0])
         ut.printCoords(max_loc,w)
