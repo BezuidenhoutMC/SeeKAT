@@ -174,7 +174,7 @@ if __name__ == "__main__":
     
     data,c,boresight = ut.readCoords(options)
     
-    psf_ar = ut.readPSF(options)
+    psf_ar = ut.readPSF(options.psf[0],options.clipping[0])
     
     c,w,array_width,array_height = co.deg2pix(c,psf_ar,boresight,options.res[0])
     
