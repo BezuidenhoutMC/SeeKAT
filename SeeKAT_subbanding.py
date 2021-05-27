@@ -102,7 +102,7 @@ if __name__ == "__main__":
     
     dataLocs,dataSNR,c,boresight = ut.readSubbandingFiles(options)
     
-    psfCube = ut.makeSubbandingPSFcube(options.psf)
+    psfCube = ut.makeSubbandingPSFcube(options)
     
     c,w,array_width,array_height = co.deg2pix(c,psfCube[:,:,0],boresight,options.res[0])
     
