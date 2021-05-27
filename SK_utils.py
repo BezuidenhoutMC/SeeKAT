@@ -60,11 +60,11 @@ def readCoords(options):
 
 	return data,c,boresightCoord
 	
-def readPSF(options):
+def readPSF(psf,clip):
 	'''
 	Converts PSF in fits format to a numpy array
 	'''
-	hdul = fits.open(options.psf[0])
+	hdul = fits.open(psf)
 	psf_ar = hdul[0].data
 
 	# CLIPPING
@@ -74,7 +74,7 @@ def readPSF(options):
 	#		but for detections further away from any CB boresight you might want
 	#		to reduce that. 
 
-	psf_ar[psf_ar<options.clipping[0]] = 0
+	psf_ar[psf_ar<clip] = 0
 
 	return psf_ar
 
@@ -169,7 +169,7 @@ def readSubbandingFiles(options):
 	return dataLocs,dataSNR,c,boresightCoord
 
 def makeSubbandingPSFcube(options):
-	psf0 = readPSF(options)
+	psf0 = readPSF(options.psf[0],options.clipping[0])
 	psfCube = np.zeros((psf0.shape[0],psf0.shape[1],len(options.psf)))
 	for i in range(0,len(options.psf)):
 		psfCube[:,:,i] = readPSF(options.psf[i])
