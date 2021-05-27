@@ -24,6 +24,8 @@ def parseOptions(parser):
 	--s Draws known coordinates onto the plot for comparison.
 	--scalebar Sets the length of the scale bar on the plot in arcseconds.
 	--ticks Sets the spacing of ticks on the localisation plot.
+	--clip Sets level below which CB PSF is set equal to zero.
+	--zoom Automatically zooms in on the TABs.
 	'''
 
 	parser.add_argument('-f', dest='file', 
