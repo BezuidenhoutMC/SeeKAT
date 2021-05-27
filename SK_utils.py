@@ -168,11 +168,11 @@ def readSubbandingFiles(options):
 		
 	return dataLocs,dataSNR,c,boresightCoord
 
-def makeSubbandingPSFcube(psf):
-	psf0 = readPSF(psf[0])
-	psfCube = np.zeros((psf0.shape[0],psf0.shape[1],len(psf)))
-	for i in range(0,len(psf)):
-		psfCube[:,:,i] = readPSF(psf[i])
+def makeSubbandingPSFcube(options):
+	psf0 = readPSF(options)
+	psfCube = np.zeros((psf0.shape[0],psf0.shape[1],len(options.psf)))
+	for i in range(0,len(options.psf)):
+		psfCube[:,:,i] = readPSF(options.psf[i])
 		
 	return psfCube
 
