@@ -68,7 +68,24 @@ def parseOptions(parser):
 				type=str,
 				help="Draws given coordinate location (degrees) on localisation plot",
 				required = False)
-
+	parser.add_argument('--scalebar', dest='sb',
+						nargs = 1,
+						type = float,
+						help = "Length of scale bar on the localisation plot in arcseconds. Set to 0 to omit altogether",
+						default = [10],
+						required = False)
+	parser.add_argument('--ticks', dest='tickspacing',
+						nargs = 1,
+						type = float,
+						help = "Sets the number of pixels between ticks on the localisation plot",
+						default = [50],
+						required = False)
+	parser.add_argument('--clip', dest='clipping',
+						nargs = 1,
+						type = float,
+						help = "Sets values of the PSF below this number to zero. Helps minimise the influence of low-level sidelobes",
+						default = [0.08],
+						required = False)	
 
 	options= parser.parse_args()
 
@@ -81,6 +98,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
     
+    #data,c,boresight = ut.readCoords(options)
+    
     dataLocs,dataSNR,c,boresight = ut.readSubbandingFiles(options)
     
     psfCube = ut.makeSubbandingPSFcube(options.psf)
@@ -92,7 +111,7 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=40)
+    Splot.make_ticks(array_width,array_height,w,fineness=options.tickspacing[0])
     
     fullbandLogLikelihood = np.zeros((array_height,array_width))
     for subband in range(0,psfCube.shape[2]):
@@ -103,10 +122,13 @@ if __name__ == "__main__":
                 subbandSNRs.append(line["SNR"])
         subbandData = {"SN":np.asarray(subbandSNRs)}
         loglikelihood = SK.make_plot(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
+       #plt.imshow(likelihood)
+        #plt.show()
 
         fullbandLogLikelihood+=loglikelihood*np.max(subbandData["SN"])
+        #fullbandLogLikelihood /= np.amax(fullbandLikelihood)
   
-    Splot.likelihoodPlot(ax,fullbandLogLikelihood)
+    Splot.likelihoodPlot(ax,fullbandLogLikelihood,options)
     max_deg = []
     max_loc = np.where(fullbandLogLikelihood==np.amax(fullbandLogLikelihood))
     if len(max_loc) == 2:

@@ -52,19 +52,15 @@ def deg2pix(c,psf,boresight,res):
     Converts coordinates from degrees to pixels
     c must be a SkyCoord object and psf a numpy array.
     '''
-
     step = res/3600.
     w = buildWCS(boresight,step,res)
-    
     coordsDeg = []
     for i in range(0,len(c)):
         coordsDeg.append([c.ra.deg[i],c.dec.deg[i]])
-
     ### Convert deg -> pix
     px = w.all_world2pix(coordsDeg,1)
     c.ra.px = px[:,0]
     c.dec.px = px[:,1]
-
     ### Calculate array size needed to fit all beams
     boresightPx = w.all_world2pix([boresight],1)[0]
     array_width,array_height = calcArraySize(c,boresightPx,psf)
@@ -99,7 +95,6 @@ def convert_coords_IB(c,psf,boresight,res):
 	w.wcs.cdelt = np.array([-1*step, step])
 	w.wcs.crval = boresight
 	w.wcs.ctype = ["RA---TAN", "DEC--TAN"]
-
 	coordsDeg = []
 	for i in range(0,len(c)):
 		coordsDeg.append([c.ra.deg[i],c.dec.deg[i]])

@@ -21,7 +21,9 @@ def parseOptions(parser):
 	--r	Resolution of PSF in units of arcseconds per pixel
 	--n	Number of beams to consider when creating overlap contours. Will
 		pick the specified number of beams with the highest S/N values.
-	--s Draws known coordinates onto the plot for comparison.    
+	--s Draws known coordinates onto the plot for comparison.
+	--scalebar Sets the length of the scale bar on the plot in arcseconds.
+	--ticks Sets the spacing of ticks on the localisation plot.
 	'''
 
 	parser.add_argument('-f', dest='file', 
@@ -59,8 +61,27 @@ def parseOptions(parser):
 				type=str,
 				help="Draws given coordinate location (degrees) on localisation plot",
 				required = False)
-
-
+	parser.add_argument('--scalebar', dest='sb',
+						nargs = 1,
+						type = float,
+						help = "Length of scale bar on the localisation plot in arcseconds. Set to 0 to omit altogether",
+						default = [10],
+						required = False)
+	parser.add_argument('--ticks', dest='tickspacing',
+						nargs = 1,
+						type = float,
+						help = "Sets the number of pixels between ticks on the localisation plot",
+						default = [50],
+						required = False)
+	parser.add_argument('--clip', dest='clipping',
+						nargs = 1,
+						type = float,
+						help = "Sets values of the PSF below this number to zero. Helps minimise the influence of low-level sidelobes",
+						default = [0.08],
+						required = False)	
+	parser.add_argument('--zoom', dest='autozoom',
+						help = "Automatically zooms the localisation plot in on the TABs",
+						action = 'store_true')	
 	options= parser.parse_args()
 
 	return options
@@ -90,10 +111,9 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
         full_ar = np.maximum(full_ar,beam_ar)
 
         for j in range(0,len(c)):
-            stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
-            stdout.flush()
             if i<j and data["SN"][i]+data["SN"][j] >= sum_threshold:
-
+                stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
+                stdout.flush()
                 plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
 
                 comparison_ar = np.zeros((array_height,array_width))
@@ -152,7 +172,7 @@ if __name__ == "__main__":
     
     data,c,boresight = ut.readCoords(options)
     
-    psf_ar = ut.readPSF(options.psf[0])
+    psf_ar = ut.readPSF(options)
     
     c,w,array_width,array_height = co.deg2pix(c,psf_ar,boresight,options.res[0])
     
@@ -161,11 +181,12 @@ if __name__ == "__main__":
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=40)
+    Splot.make_ticks(array_width,array_height,w,fineness=options.tickspacing[0])
     
     loglikelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
+    #np.save("CB_localisation.npy",loglikelihood)
 
-    Splot.likelihoodPlot(ax,loglikelihood)
+    Splot.likelihoodPlot(ax,loglikelihood,options)
     max_deg = []
     max_loc = np.where(loglikelihood==np.amax(loglikelihood))
     
@@ -175,11 +196,9 @@ if __name__ == "__main__":
     else:
         print('Multiple equally possible locations')
     
-    #ax.set_xlim(min(c.ra.px) -15 ,max(c.ra.px) + 15)
-    #ax.set_ylim(min(c.dec.px) -15 ,max(c.dec.px) + 15)
-    #ax.set_xlim(max_loc[0]-7,max_loc[0]+7)
-    #ax.set_ylim(max_loc[1]-7,max_loc[1]+7)
-
+    if options.autozoom == True:
+        ax.set_xlim(min(c.ra.px) - int(15/options.res[0]) ,max(c.ra.px) + int(15/options.res[0]))
+        ax.set_ylim(min(c.dec.px) -int(15/options.res[0]) ,max(c.dec.px) + int(15/options.res[0]))
 
     plt.savefig(options.file[0]+'.png',dpi=300)
     plt.show()

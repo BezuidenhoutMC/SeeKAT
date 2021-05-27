@@ -47,7 +47,7 @@ def make_ticks(array_width,array_height,w,fineness):
 	plt.xticks(ticks[0], ra_deg,rotation=40,fontsize=8)
 	plt.yticks(ticks[1], dec_deg,fontsize=8)
 
-def likelihoodPlot(ax,loglikelihood):
+def likelihoodPlot(ax,loglikelihood,options):
     '''
     Creates the localisation plot
     '''
@@ -56,14 +56,15 @@ def likelihoodPlot(ax,loglikelihood):
 
     plt.imshow(likelihood,origin='lower',cmap='inferno')
     
-    scalebar = AnchoredSizeBar(ax.transData,
-                           10, '10 arcseconds', 'upper left', 
+    if options.sb[0] != 0:
+        scalebar = AnchoredSizeBar(ax.transData,
+                           int(options.sb[0]/options.res[0]), '%d arcseconds' % (options.sb[0]), 'upper left', 
                            pad=1.0,
                            color='black',
                            frameon=True,
                            size_vertical=0.2)
 
-    ax.add_artist(scalebar)
+        ax.add_artist(scalebar)
     cbar = plt.colorbar()
     cbar.ax.set_ylabel('Localisation likelihood')
     #cbar.ax.set_ylabel('Relative intensity')
@@ -86,7 +87,7 @@ def likelihoodPlot(ax,loglikelihood):
     if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0]) != 0:
         ind_2sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0][0]
         val_2sigma = likelihood_flat_sorted[ind_2sigma]
-        plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
+        #plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
 
     #if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0]) != 0:
         #ind_3sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0][0]
@@ -96,7 +97,6 @@ def likelihoodPlot(ax,loglikelihood):
     #max_loc = np.where(likelihood==np.amax(likelihood))
     ## When displaying a 2D array, the last index is the last axis, thus we need to flip things here.
     #max_loc = [max_loc[1],max_loc[0]]
-
 
     plt.xlabel('RA ($^\circ$)')
     plt.ylabel('Dec ($^\circ$)')

@@ -22,6 +22,7 @@ def readCoords(options):
 	data = np.genfromtxt(options.file[0],
 			delimiter=' ',
 			dtype=None,
+#			names=["RA","Dec","SN"],
 			names=["RA","Dec","SN"],
 			encoding="ascii")
 
@@ -59,11 +60,11 @@ def readCoords(options):
 
 	return data,c,boresightCoord
 	
-def readPSF(psf):
+def readPSF(options):
 	'''
 	Converts PSF in fits format to a numpy array
 	'''
-	hdul = fits.open(psf)
+	hdul = fits.open(options.psf[0])
 	psf_ar = hdul[0].data
 
 	# CLIPPING
@@ -73,7 +74,7 @@ def readPSF(psf):
 	#		but for detections further away from any CB boresight you might want
 	#		to reduce that. 
 
-	psf_ar[psf_ar<0.08] = 0
+	psf_ar[psf_ar<options.clipping[0]] = 0
 
 	return psf_ar
 
