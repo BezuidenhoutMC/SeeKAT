@@ -172,7 +172,7 @@ def makeSubbandingPSFcube(options):
 	psf0 = readPSF(options.psf[0],options.clipping[0])
 	psfCube = np.zeros((psf0.shape[0],psf0.shape[1],len(options.psf)))
 	for i in range(0,len(options.psf)):
-		psfCube[:,:,i] = readPSF(options.psf[i])
+		psfCube[:,:,i] = readPSF(options.psf[i],options.clipping[0])
 		
 	return psfCube
 
