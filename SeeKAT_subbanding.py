@@ -106,12 +106,12 @@ if __name__ == "__main__":
     
     c,w,array_width,array_height = co.deg2pix(c,psfCube[:,:,0],boresight,options.res[0])
     
-    f, ax = plt.subplots()
+    f, ax = plt.subplots(figsize=(10,10))
     
     if options.source:
         Splot.plot_known(w,options.source[0])
 
-    Splot.make_ticks(array_width,array_height,w,fineness=options.tickspacing[0])
+    Splot.make_ticks(ax,array_width,array_height,w,fineness=options.tickspacing[0])
     
     fullbandLogLikelihood = np.zeros((array_height,array_width))
     for subband in range(0,psfCube.shape[2]):
@@ -121,14 +121,14 @@ if __name__ == "__main__":
             if line["fil"][-2:] == "."+str(subband):
                 subbandSNRs.append(line["SNR"])
         subbandData = {"SN":np.asarray(subbandSNRs)}
-        loglikelihood = SK.make_plot(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
+        loglikelihood = SK.make_map(array_height,array_width,c,psfCube[:,:,subband],options,subbandData)
        #plt.imshow(likelihood)
         #plt.show()
 
         fullbandLogLikelihood+=loglikelihood*np.max(subbandData["SN"])
         #fullbandLogLikelihood /= np.amax(fullbandLikelihood)
   
-    Splot.likelihoodPlot(ax,fullbandLogLikelihood,options)
+    Splot.likelihoodPlot(f,ax,fullbandLogLikelihood,options)
     max_deg = []
     max_loc = np.where(fullbandLogLikelihood==np.amax(fullbandLogLikelihood))
     if len(max_loc) == 2:

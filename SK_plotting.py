@@ -35,27 +35,36 @@ def plot_known(w,known_coords):
 	
 	plt.scatter(known_px[0,0],known_px[0,1],c='red',marker='x',s=200,zorder=999)
 
-def make_ticks(array_width,array_height,w,fineness):
+def make_ticks(ax,array_width,array_height,w,fineness):
 	'''
 	Adds ticks and labels in sky coordinates to the plot.
 	'''
-
+	
 	ticks = ut.getTicks(array_width,array_height,w,fineness)
 	labels = co.pix2deg(ticks,w)
 	ra_deg= np.around(labels[:,0],4)
 	dec_deg = np.around(labels[:,1],4)
-	plt.xticks(ticks[0], ra_deg,rotation=40,fontsize=8)
-	plt.yticks(ticks[1], dec_deg,fontsize=8)
+	ax.set_xticks(ticks[0])#,rotation=40,fontsize=8)
+	ax.set_xticklabels(ra_deg,rotation=40)
+	ax.set_yticks(ticks[1])#, dec_deg)#,fontsize=8)
+	ax.set_yticklabels(dec_deg)
+	
 
-def likelihoodPlot(ax,loglikelihood,options):
+def likelihoodPlot(f,ax,loglikelihood,options):
     '''
     Creates the localisation plot
     '''
+    #np.save('CB_localisation.npy',loglikelihood)
+
     likelihood = np.exp(loglikelihood - np.nanmax(loglikelihood))
+
     likelihood /= likelihood.sum()
 
-    plt.imshow(likelihood,origin='lower',cmap='inferno')
-    
+    likelihood[likelihood<0.0000001] = 0.0
+    plt.imshow(likelihood,origin='lower',cmap='inferno',aspect="auto")
+    plt.subplots_adjust(left=0.1,right=0.85,bottom=0.1,top=0.85)
+
+    ## Making adjustable scale bar    
     if options.sb[0] != 0:
         scalebar = AnchoredSizeBar(ax.transData,
                            int(options.sb[0]/options.res[0]), '%d arcseconds' % (options.sb[0]), 'upper left', 
@@ -65,15 +74,12 @@ def likelihoodPlot(ax,loglikelihood,options):
                            size_vertical=0.2)
 
         ax.add_artist(scalebar)
-    cbar = plt.colorbar()
-    cbar.ax.set_ylabel('Localisation likelihood')
+    #cbar = plt.colorbar()
+    #cbar.ax.set_ylabel('Posterior distribution')
     #cbar.ax.set_ylabel('Relative intensity')
 
 
     plt.scatter(np.where(likelihood==np.amax(likelihood))[1],np.where(likelihood==np.amax(likelihood))[0],marker='v',c='cyan')
-
-    #plt.contour(likelihood,levels=[1-np.std(likelihood)],zorder=800,colors='cyan')
-    #plt.contour(likelihood,levels=[1-2*np.std(likelihood)],zorder=800,colors='lime')
 
     ## Calculating the interval values in 2D
     likelihood_flat_sorted = np.sort(likelihood, axis=None)
@@ -82,21 +88,36 @@ def likelihoodPlot(ax,loglikelihood,options):
     if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.6827))[0]) != 0:
         ind_1sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.6827))[0][0]
         val_1sigma = likelihood_flat_sorted[ind_1sigma]
-        plt.contour(likelihood,levels=[val_1sigma],zorder=800,colors='cyan')
+        cs1 = plt.contour(likelihood,levels=[val_1sigma],zorder=800,colors='cyan')
 
     if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0]) != 0:
         ind_2sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9545))[0][0]
         val_2sigma = likelihood_flat_sorted[ind_2sigma]
-        #plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
+        cs2 = plt.contour(likelihood,levels=[val_2sigma],zorder=800,colors='lime')
 
-    #if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0]) != 0:
-        #ind_3sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0][0]
-        #val_3sigma = likelihood_flat_sorted[ind_3sigma]
-        #plt.contour(likelihood,levels=[val_3sigma],zorder=800,colors='green')
+    if len(np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0]) != 0:
+        ind_3sigma = np.nonzero(likelihood_flat_sorted_cumsum > (1-0.9973))[0][0]
+        val_3sigma = likelihood_flat_sorted[ind_3sigma]
+        plt.contour(likelihood,levels=[val_3sigma],zorder=800,colors='magenta')
 
-    #max_loc = np.where(likelihood==np.amax(likelihood))
-    ## When displaying a 2D array, the last index is the last axis, thus we need to flip things here.
-    #max_loc = [max_loc[1],max_loc[0]]
+    ## Making axis histograms
+    ax_histx = f.add_axes([0.1,0.855,0.75,0.1], sharex=ax)
+    ax_histx.plot(np.sum(likelihood,axis=0),color='black')
+    plt.setp(ax_histx.get_xticklabels(), visible=False)
 
-    plt.xlabel('RA ($^\circ$)')
-    plt.ylabel('Dec ($^\circ$)')
+    ax_histx.fill_between(x=range(0,likelihood.shape[1]),y1=-0.1*max(np.sum(likelihood,axis=0)),y2=np.sum(likelihood,axis=0),where=np.amax(likelihood,axis=0)>=val_3sigma,color='magenta')
+    ax_histx.fill_between(x=range(0,likelihood.shape[1]),y1=-0.1*max(np.sum(likelihood,axis=0)),y2=np.sum(likelihood,axis=0),where=np.amax(likelihood,axis=0)>=val_2sigma,color='lime')
+    ax_histx.fill_between(x=range(0,likelihood.shape[1]),y1=-0.1*max(np.sum(likelihood,axis=0)),y2=np.sum(likelihood,axis=0),where=np.amax(likelihood,axis=0)>=val_1sigma, color='cyan')
+
+    ax_histy = f.add_axes([0.855,0.1,0.1,0.75], sharey=ax)
+    ax_histy.plot(np.sum(likelihood,axis=1),range(0,likelihood.shape[0]),color='black')
+    ax_histy.set_title('Likelihood',size=10)
+    plt.setp(ax_histy.get_yticklabels(), visible=False)
+
+    ax_histy.fill_betweenx(y=range(0,likelihood.shape[0]),x1=-0.1*max(np.sum(likelihood,axis=1)),x2=np.sum(likelihood,axis=1),where=np.amax(likelihood,axis=1)>=val_3sigma, color='magenta')
+    ax_histy.fill_betweenx(y=range(0,likelihood.shape[0]),x1=-0.1*max(np.sum(likelihood,axis=1)),x2=np.sum(likelihood,axis=1),where=np.amax(likelihood,axis=1)>=val_2sigma, color='lime')
+    ax_histy.fill_betweenx(y=range(0,likelihood.shape[0]),x1=-0.1*max(np.sum(likelihood,axis=1)),x2=np.sum(likelihood,axis=1),where=np.amax(likelihood,axis=1)>=val_1sigma, color='cyan')
+
+
+    ax.set_xlabel('RA ($^\circ$)')
+    ax.set_ylabel('Dec ($^\circ$)')

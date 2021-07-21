@@ -89,7 +89,7 @@ def parseOptions(parser):
 	return options
 
 
-def make_plot(array_height,array_width,c,psf_ar,options,data):
+def make_map(array_height,array_width,c,psf_ar,options,data):
     
     sum_threshold = ut.get_best_pairs(data,int(options.npairs[0]))   # Only beam pairs with S/N summing to above this
                                                                 # number will be used for localisation
@@ -135,10 +135,6 @@ def make_plot(array_height,array_width,c,psf_ar,options,data):
 
                 loglikelihood = localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood)
 
-
-    #loglikelihood /= np.amax(loglikelihood)
-    #plt.imshow(full_ar,origin='lower',cmap='inferno')
-
     return loglikelihood
 
 
@@ -155,9 +151,6 @@ def localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood):
 
     #error = (1/beam_snr) + (1/comparison_snr)   # Old error formula, Gaussian approximation
     error = (1.0 / comparison_snr) + (beam_snr / comparison_snr**2)  # Full error formula, https://en.wikipedia.org/wiki/Ratio_distribution
-
-    lower_bound = ratio_snr - error
-    upper_bound = ratio_snr + error
     
     gaussian = np.exp(-np.power(ratio_ar - ratio_snr, 2.) / (2 * np.power(error, 2.)))
     gaussian /= 2.0*np.pi*error
@@ -177,18 +170,19 @@ if __name__ == "__main__":
     psf_ar = ut.readPSF(options.psf[0],options.clipping[0])
     
     c,w,array_width,array_height = co.deg2pix(c,psf_ar,boresight,options.res[0])
-    
-    f, ax = plt.subplots()
+
+    f, ax = plt.subplots(figsize=(10,10))
     
     if options.source:
         Splot.plot_known(w,options.source[0])
-
-    Splot.make_ticks(array_width,array_height,w,fineness=options.tickspacing[0])
     
-    loglikelihood = make_plot(array_height,array_width,c,psf_ar,options,data)
-    #np.save("CB_localisation.npy",loglikelihood)
+    loglikelihood = make_map(array_height,array_width,c,psf_ar,options,data)
 
-    Splot.likelihoodPlot(ax,loglikelihood,options)
+    #np.save("CB_localisation.npy",loglikelihood)
+    Splot.make_ticks(ax,array_width,array_height,w,fineness=options.tickspacing[0])
+
+    Splot.likelihoodPlot(f,ax,loglikelihood,options)
+
     max_deg = []
     max_loc = np.where(loglikelihood==np.amax(loglikelihood))
     

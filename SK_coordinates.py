@@ -64,7 +64,7 @@ def deg2pix(c,psf,boresight,res):
     ### Calculate array size needed to fit all beams
     boresightPx = w.all_world2pix([boresight],1)[0]
     array_width,array_height = calcArraySize(c,boresightPx,psf)
-
+    #array_width,array_height = 7200,7200
     ### SHIFT coordinates so that boresight is at center of array
     c.ra.px += 0.5*array_width
     c.dec.px += 0.5*array_height 
