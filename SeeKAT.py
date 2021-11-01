@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 #Tiaan Bezuidenhout, 2020. For inquiries: bezmc93@gmail.com
-#NB: REQUIRES Python 2
+#NB: REQUIRES Python 3
 
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from sys import stdout
+np.seterr(divide='ignore', invalid='ignore')
 
-import SK_utils as ut
-import SK_coordinates as co
-import SK_plotting as Splot
+import SK.utils as ut
+import SK.coordinates as co
+import SK.plotting as Splot
 
 
 def parseOptions(parser):
@@ -57,6 +58,7 @@ def parseOptions(parser):
 	parser.add_argument('--n',dest='npairs',
 				nargs = 1,
 				type = int,
+				help='Number of beams to use',
 				default = [1000000])
 	parser.add_argument('--s', dest='source',
 				nargs = 1,
@@ -73,7 +75,7 @@ def parseOptions(parser):
 						nargs = 1,
 						type = float,
 						help = "Sets the number of pixels between ticks on the localisation plot",
-						default = [50],
+						default = [100],
 						required = False)
 	parser.add_argument('--clip', dest='clipping',
 						nargs = 1,
@@ -88,113 +90,130 @@ def parseOptions(parser):
 
 	return options
 
-
 def make_map(array_height,array_width,c,psf_ar,options,data):
-    
-    sum_threshold = ut.get_best_pairs(data,int(options.npairs[0]))   # Only beam pairs with S/N summing to above this
-                                                                # number will be used for localisation
+	if options.npairs[0] > 2 and options.npairs[0]+1 <= len(c):
+		npairs = options.npairs[0]-1
+	else:
+		npairs = len(c)-1
 
-    full_ar = np.zeros((array_height,array_width))
+	full_ar = np.zeros((array_height,array_width))
 
-    loglikelihood = np.zeros((array_height,array_width))
+	loglikelihood = np.zeros((array_height,array_width))
 
-    for i in range(0,len(c)):
-        #print i
-        beam_ar = np.zeros((array_height,array_width))
+	nit = 1000  # number of iterations for covariance matrix
 
-        dec_start = int(c.dec.px[i])-int(psf_ar.shape[1]/2)
-        dec_end = int(c.dec.px[i])+int(psf_ar.shape[1]/2)
-        ra_start = int(c.ra.px[i])-int(psf_ar.shape[0]/2)
-        ra_end = int(c.ra.px[i])+int(psf_ar.shape[0]/2)
+	sim_ratios = np.zeros((nit,0))
+	obs_ratios = np.zeros((npairs,0))
 
-        beam_ar[dec_start : dec_end,ra_start : ra_end] = psf_ar
-        plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed') # shows beam sizes
+	#resids = np.zeros((nit,0))
+	fake_snrs = data["SN"][None,:] + np.random.randn(nit*len(c)).reshape(nit,len(c))
 
-        full_ar = np.maximum(full_ar,beam_ar)
+	#make covariance matrix
+	beam_snr = data["SN"][0]
+	beam_snrs_fake = fake_snrs[:,0]
 
-        for j in range(0,len(c)):
-            if i<j and data["SN"][i]+data["SN"][j] >= sum_threshold:
-                stdout.write("\rComputing localisation curves for beam %d vs %d/%d..." % (j+1,i+1,len(c)))
-                stdout.flush()
-                plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
+	for j in range(1,npairs+1):
+		comparison_snr = data["SN"][j]
+		comparison_snrs_fake = fake_snrs[:,j]
+		sim_ratios = np.append(sim_ratios,(beam_snrs_fake/comparison_snrs_fake)[:,None],axis=1)
+		obs_ratios = np.append(obs_ratios,(beam_snr/comparison_snr))
 
-                comparison_ar = np.zeros((array_height,array_width))
+	C = np.cov(sim_ratios,rowvar=False)
 
-                dec_start = int(c.dec.px[j])-int(psf_ar.shape[1]/2)
-                dec_end = int(c.dec.px[j])+int(psf_ar.shape[1]/2)
-                ra_start = int(c.ra.px[j])-int(psf_ar.shape[0]/2)
-                ra_end = int(c.ra.px[j])+int(psf_ar.shape[0]/2)
+	# make model and get residuals
 
-                comparison_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
+	psf_ratios = np.zeros((array_height,array_width,npairs))
 
-                plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5)
-                plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5)
+	cn = 0
+	stdout.write("\rAdding beam %d/%d..." % (j+1,npairs+1))
+	stdout.flush()
 
-                beam_snr = data["SN"][i]
-                comparison_snr = data["SN"][j]
+	beam_ar = np.zeros((array_height,array_width))
+	beam_snr = data["SN"][0]  # NB, beams must be sorted by S/N; highest first!
 
-                loglikelihood = localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood)
+	dec_start = int(np.round(c.dec.px[0]))-int(psf_ar.shape[1]/2)
+	dec_end = int(np.round(c.dec.px[0]))+int(psf_ar.shape[1]/2)
+	ra_start = int(np.round(c.ra.px[0]))-int(psf_ar.shape[0]/2)
+	ra_end = int(np.round(c.ra.px[0])) +int(psf_ar.shape[0]/2)
 
-    return loglikelihood
+	beam_ar[dec_start : dec_end,ra_start : ra_end] = psf_ar
+	plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed') # shows beam sizes
 
+	for j in range(1,npairs+1):
+		stdout.write("\rAdding beam %d/%d..." % (j+1,npairs+1))
+		stdout.flush()
 
-def localise(beam_snr,comparison_snr,beam_ar,comparison_ar,loglikelihood):
-    '''
-    Plots contours where the ratio of the S/N detected in each 
-    beam to the highest-S/N detection matches the ratio of 
-    those beams' PSFs. 1-sigma errors are also drawn.
-    '''
+		plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
 
-    ratio_ar = np.divide(beam_ar,comparison_ar)
+		comparison_snr = data["SN"][j]
+		#print(beam_snr,"/",comparison_snr)
 
-    ratio_snr = beam_snr/comparison_snr		
+		comparison_ar = np.zeros((array_height,array_width))
 
-    #error = (1/beam_snr) + (1/comparison_snr)   # Old error formula, Gaussian approximation
-    error = (1.0 / comparison_snr) + (beam_snr / comparison_snr**2)  # Full error formula, https://en.wikipedia.org/wiki/Ratio_distribution
-    
-    gaussian = np.exp(-np.power(ratio_ar - ratio_snr, 2.) / (2 * np.power(error, 2.)))
-    gaussian /= 2.0*np.pi*error
-    gaussian = np.nan_to_num(gaussian)
-    gaussian = np.log(gaussian)
+		dec_start = int(np.round(c.dec.px[j]))-int(psf_ar.shape[1]/2)
+		dec_end = int(np.round(c.dec.px[j]))+int(psf_ar.shape[1]/2)
+		ra_start = int(np.round(c.ra.px[j]))-int(psf_ar.shape[0]/2)
+		ra_end = int(np.round(c.ra.px[j]))+int(psf_ar.shape[0]/2)
+		comparison_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
+                
+		plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5)
+		plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5)
 
-    loglikelihood += gaussian
+		psf_ratios[:,:,cn] = beam_ar/comparison_ar
+		cn+=1
 
-    return loglikelihood
+	resids = np.zeros((array_height,array_width,npairs))
+
+	for i in range(0,npairs):
+		resids[:,:,i] = obs_ratios[i] - psf_ratios[:,:,i]
+
+	chi2 = np.sum(resids * np.sum(np.linalg.inv(C)[None,None,:,:] * resids[:,:,:,None],axis=2),axis=2)
+	chi2[chi2==np.inf] = np.nan
+	loglikelihood = -0.5 * chi2
+
+	return loglikelihood
+
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
     
     data,c,boresight = ut.readCoords(options)
-    
+
     psf_ar = ut.readPSF(options.psf[0],options.clipping[0])
     
     c,w,array_width,array_height = co.deg2pix(c,psf_ar,boresight,options.res[0])
 
     f, ax = plt.subplots(figsize=(10,10))
-    
+
+
     if options.source:
         Splot.plot_known(w,options.source[0])
     
     loglikelihood = make_map(array_height,array_width,c,psf_ar,options,data)
 
-    #np.save("CB_localisation.npy",loglikelihood)
     Splot.make_ticks(ax,array_width,array_height,w,fineness=options.tickspacing[0])
 
+    print("\nPlotting...")
     Splot.likelihoodPlot(f,ax,loglikelihood,options)
 
     max_deg = []
-    max_loc = np.where(loglikelihood==np.amax(loglikelihood))
-    
+    max_loc = np.where(loglikelihood==np.nanmax(loglikelihood))
+
     if len(max_loc) == 2:
         max_loc = (max_loc[1],max_loc[0])
         ut.printCoords(max_loc,w)
-    else:
-        print('Multiple equally possible locations')
+    # else:
+        # print('Multiple equally possible locations')
     
     if options.autozoom == True:
         ax.set_xlim(min(c.ra.px) - int(15/options.res[0]) ,max(c.ra.px) + int(15/options.res[0]))
         ax.set_ylim(min(c.dec.px) -int(15/options.res[0]) ,max(c.dec.px) + int(15/options.res[0]))
+
+    #l = np.exp(loglikelihood - np.nanmax(loglikelihood))
+    #l /= l.sum()
+    #ut.write2fits(w,l)
 
     plt.savefig(options.file[0]+'.png',dpi=300)
     plt.show()
