@@ -1,12 +1,14 @@
 # SeeKAT multibeam localiser
 
-• Reads in list of detections (RA,Dec,S/N) and PSF. 
+• Reads in list of detections (RA, Dec, S/N) and the beam PSF. PSFs can be modelled using MOSAIC (https://github.com/wchenastro/Mosaic).
 
-• Arranges beam PSFs appropriately relative to each other.
+• Computes a covariance matrix of the S/N value ratios, assuming 1-sigma Gaussian errors on each measurement.
 
-• Calculates localisation contours (+ 1 sigma errors) where ratio of PSFs match ratio of detections' S/N.
+• Models the aggregate beam response by arranging beam PSFs appropriately relative to each other.
 
-• Adds probability distributions for each pair of beams to create a localisation likelihood map.
+• Calculates a likelihood distribution of obtaining the observed S/N in each beam according to the modelled response.
+
+• Plots the likelihood function over RA and Dec with 1-sigma uncertainty, overlaid on the beam coordinates and sizes.
 
 Usage: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
 
