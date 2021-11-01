@@ -125,7 +125,7 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 	psf_ratios = np.zeros((array_height,array_width,npairs))
 
 	cn = 0
-	stdout.write("\rAdding beam %d/%d..." % (j+1,npairs+1))
+	stdout.write("\rAdding beam %d/%d..." % (1,npairs+1))
 	stdout.flush()
 
 	beam_ar = np.zeros((array_height,array_width))
@@ -137,13 +137,13 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 	ra_end = int(np.round(c.ra.px[0])) +int(psf_ar.shape[0]/2)
 
 	beam_ar[dec_start : dec_end,ra_start : ra_end] = psf_ar
-	plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5,linestyles='dashed') # shows beam sizes
+	plt.contour(beam_ar,levels=[options.overlap],colors='black',linewidths=0.5,linestyles='dashed') # shows beam sizes
 
 	for j in range(1,npairs+1):
 		stdout.write("\rAdding beam %d/%d..." % (j+1,npairs+1))
 		stdout.flush()
 
-		plt.scatter(c.ra.px,c.dec.px,color='white',s=0.2)
+		plt.scatter(c.ra.px,c.dec.px,color='black',s=0.2)
 
 		comparison_snr = data["SN"][j]
 		#print(beam_snr,"/",comparison_snr)
@@ -156,8 +156,8 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 		ra_end = int(np.round(c.ra.px[j]))+int(psf_ar.shape[0]/2)
 		comparison_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
                 
-		plt.contour(comparison_ar,levels=[options.overlap],colors='white',linewidths=0.5)
-		plt.contour(beam_ar,levels=[options.overlap],colors='white',linewidths=0.5)
+		plt.contour(comparison_ar,levels=[options.overlap],colors='black',linewidths=0.5)
+		plt.contour(beam_ar,levels=[options.overlap],colors='black',linewidths=0.5)
 
 		psf_ratios[:,:,cn] = beam_ar/comparison_ar
 		cn+=1
