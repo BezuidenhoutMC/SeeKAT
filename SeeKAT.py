@@ -115,8 +115,8 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 	for j in range(1,npairs+1):
 		comparison_snr = data["SN"][j]
 		comparison_snrs_fake = fake_snrs[:,j]
-		sim_ratios = np.append(sim_ratios,(beam_snrs_fake/comparison_snrs_fake)[:,None],axis=1)
-		obs_ratios = np.append(obs_ratios,(beam_snr/comparison_snr))
+		sim_ratios = np.append(sim_ratios,(comparison_snrs_fake/beam_snrs_fake)[:,None],axis=1)	# NB, ratios must always be comparison (lower SN) / beam (highest SN)
+		obs_ratios = np.append(obs_ratios,(comparison_snr/beam_snr))
 
 	C = np.cov(sim_ratios,rowvar=False)
 
@@ -146,7 +146,7 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 		plt.scatter(c.ra.px,c.dec.px,color='black',s=0.2)
 
 		comparison_snr = data["SN"][j]
-		#print(beam_snr,"/",comparison_snr)
+		# print(comparison_snr,"/",beam_snr)
 
 		comparison_ar = np.zeros((array_height,array_width))
 
@@ -159,7 +159,7 @@ def make_map(array_height,array_width,c,psf_ar,options,data):
 		plt.contour(comparison_ar,levels=[options.overlap],colors='black',linewidths=0.5)
 		plt.contour(beam_ar,levels=[options.overlap],colors='black',linewidths=0.5)
 
-		psf_ratios[:,:,cn] = beam_ar/comparison_ar
+		psf_ratios[:,:,cn] = comparison_ar/beam_ar
 		cn+=1
 
 	resids = np.zeros((array_height,array_width,npairs))
