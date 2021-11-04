@@ -123,7 +123,7 @@ if __name__ == "__main__":
        #plt.imshow(likelihood)
         #plt.show()
 
-        fullbandLogLikelihood+=loglikelihood*np.max(subbandData["SN"])
+        fullbandLogLikelihood+=loglikelihood#*np.max(subbandData["SN"])
         #fullbandLogLikelihood /= np.amax(fullbandLikelihood)
   
     Splot.likelihoodPlot(f,ax,fullbandLogLikelihood,options)
