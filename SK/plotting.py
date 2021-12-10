@@ -46,6 +46,7 @@ def make_ticks(ax, array_width, array_height, w, fineness):
     labels = co.pix2deg(ticks, w)
     ra_deg = np.around(labels[:, 0], 4)
     dec_deg = np.around(labels[:, 1], 4)
+
     ax.set_xticks(ticks[0])  # ,rotation=40,fontsize=8)
     ax.set_xticklabels(ra_deg, rotation=40)
     ax.set_yticks(ticks[1])  # , dec_deg)#,fontsize=8)
@@ -56,6 +57,7 @@ def likelihoodPlot(f, ax, loglikelihood, options):
     """
     Creates the localisation plot
     """
+
     # np.save('CB_localisation.npy',loglikelihood)
 
     likelihood = np.exp(loglikelihood - np.nanmax(loglikelihood))
@@ -64,6 +66,7 @@ def likelihoodPlot(f, ax, loglikelihood, options):
     likelihood /= likelihood.sum()
 
     likelihood[likelihood < 0.000000001] = 0.0
+
     plt.imshow(likelihood, origin="lower", cmap="binary", aspect="auto")
     plt.subplots_adjust(left=0.1, right=0.85, bottom=0.1, top=0.85)
 

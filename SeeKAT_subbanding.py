@@ -2,11 +2,6 @@
 # Tiaan Bezuidenhout, 2020. For inquiries: bezmc93@gmail.com
 # NB: REQUIRES Python 3
 
-import SK.utils as ut
-import SK.coordinates as co
-import SK.plotting as Splot
-import SeeKAT as SK
-
 import argparse
 import numpy as np
 import math
@@ -17,6 +12,11 @@ import astropy.units as u
 import astropy.wcs as wcs
 from sys import stdout
 import matplotlib.patches as patches
+
+import SK.utils as ut
+import SK.coordinates as co
+import SK.plotting as Splot
+import SeeKAT as SK
 
 
 def parseOptions(parser):
@@ -29,6 +29,7 @@ def parseOptions(parser):
     """
 
     parser.add_argument("-l", dest="locFile", nargs=1, type=str, required=True)
+
     parser.add_argument(
         "-c",
         dest="config",
@@ -37,10 +38,13 @@ def parseOptions(parser):
         help="Configuration (json) file",
         required=False,
     )
+
     parser.add_argument("-s", dest="snrFile", nargs=1, type=str, required=True)
+
     parser.add_argument(
         "-p", dest="psf", type=str, nargs="+", help="PSF file", required=True
     )
+
     parser.add_argument(
         "--o",
         dest="overlap",
@@ -49,6 +53,7 @@ def parseOptions(parser):
         default=0.25,
         required=False,
     )
+
     parser.add_argument(
         "--r",
         dest="res",
@@ -58,7 +63,9 @@ def parseOptions(parser):
         default=1,
         required=True,
     )
+
     parser.add_argument("--n", dest="npairs", nargs=1, type=int, default=[1000000])
+
     parser.add_argument(
         "--s",
         dest="source",
@@ -67,6 +74,7 @@ def parseOptions(parser):
         help="Draws given coordinate location (degrees) on localisation plot",
         required=False,
     )
+
     parser.add_argument(
         "--scalebar",
         dest="sb",
@@ -85,6 +93,7 @@ def parseOptions(parser):
         default=[50],
         required=False,
     )
+
     parser.add_argument(
         "--clip",
         dest="clipping",
@@ -101,7 +110,6 @@ def parseOptions(parser):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
 
@@ -123,16 +131,20 @@ if __name__ == "__main__":
     Splot.make_ticks(ax, array_width, array_height, w, fineness=options.tickspacing[0])
 
     fullbandLogLikelihood = np.zeros((array_height, array_width))
+
     for subband in range(0, psfCube.shape[2]):
         print("\n---Localising in subband %d/%d---" % (subband + 1, psfCube.shape[2]))
         subbandSNRs = []
+
         for line in dataSNR:
             if line["fil"][-2:] == "." + str(subband):
                 subbandSNRs.append(line["SNR"])
+
         subbandData = {"SN": np.asarray(subbandSNRs)}
         loglikelihood = SK.make_map(
             array_height, array_width, c, psfCube[:, :, subband], options, subbandData
         )
+
         # plt.imshow(likelihood)
         # plt.show()
 
@@ -142,6 +154,7 @@ if __name__ == "__main__":
     Splot.likelihoodPlot(f, ax, fullbandLogLikelihood, options)
     max_deg = []
     max_loc = np.where(fullbandLogLikelihood == np.nanmax(fullbandLogLikelihood))
+
     if len(max_loc) == 2:
         max_loc = (max_loc[1], max_loc[0])
         ut.printCoords(max_loc, w)

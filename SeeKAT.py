@@ -33,6 +33,7 @@ def parseOptions(parser):
     parser.add_argument(
         "-f", dest="file", nargs=1, type=str, help="Detections file", required=True
     )
+
     parser.add_argument(
         "-c",
         dest="config",
@@ -41,9 +42,11 @@ def parseOptions(parser):
         help="Configuration (json) file",
         required=False,
     )
+
     parser.add_argument(
         "-p", dest="psf", nargs=1, type=str, help="PSF file", required=True
     )
+
     parser.add_argument(
         "--o",
         dest="overlap",
@@ -52,6 +55,7 @@ def parseOptions(parser):
         default=0.25,
         required=False,
     )
+
     parser.add_argument(
         "--r",
         dest="res",
@@ -61,6 +65,7 @@ def parseOptions(parser):
         default=1,
         required=True,
     )
+
     parser.add_argument(
         "--n",
         dest="npairs",
@@ -69,6 +74,7 @@ def parseOptions(parser):
         help="Number of beams to use",
         default=[1000000],
     )
+
     parser.add_argument(
         "--s",
         dest="source",
@@ -77,6 +83,7 @@ def parseOptions(parser):
         help="Draws given coordinate location (degrees) on localisation plot",
         required=False,
     )
+
     parser.add_argument(
         "--scalebar",
         dest="sb",
@@ -86,6 +93,7 @@ def parseOptions(parser):
         default=[10],
         required=False,
     )
+
     parser.add_argument(
         "--ticks",
         dest="tickspacing",
@@ -95,6 +103,7 @@ def parseOptions(parser):
         default=[100],
         required=False,
     )
+
     parser.add_argument(
         "--clip",
         dest="clipping",
@@ -104,12 +113,14 @@ def parseOptions(parser):
         default=[0.08],
         required=False,
     )
+
     parser.add_argument(
         "--zoom",
         dest="autozoom",
         help="Automatically zooms the localisation plot in on the TABs",
         action="store_true",
     )
+
     options = parser.parse_args()
 
     return options
@@ -164,13 +175,15 @@ def make_map(array_height, array_width, c, psf_ar, options, data):
     ra_end = int(np.round(c.ra.px[0])) + int(psf_ar.shape[0] / 2)
 
     beam_ar[dec_start:dec_end, ra_start:ra_end] = psf_ar
+
+    # shows beam sizes
     plt.contour(
         beam_ar,
         levels=[options.overlap],
         colors="black",
         linewidths=0.5,
         linestyles="dashed",
-    )  # shows beam sizes
+    )
 
     for j in range(1, npairs + 1):
         stdout.write("\rAdding beam %d/%d..." % (j + 1, npairs + 1))
@@ -214,7 +227,6 @@ def make_map(array_height, array_width, c, psf_ar, options, data):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
 

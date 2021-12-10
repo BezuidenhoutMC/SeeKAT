@@ -20,6 +20,7 @@ def readCoords(options):
     """
     Checks that arguments make sense, and if so returns data read from input file.
     """
+
     data = np.genfromtxt(
         options.file[0],
         delimiter=" ",
@@ -28,16 +29,16 @@ def readCoords(options):
         encoding="ascii",
     )
 
-    data = data[
-        np.argsort(data["SN"])[::-1]
-    ]  # sorting beams by S/N, so that Gaussian assumption holds better. You generally want LOW/HIGH S/N beam pairs.
+    # sorting beams by S/N, so that Gaussian assumption holds better. You generally want LOW/HIGH S/N beam pairs.
+    data = data[np.argsort(data["SN"])[::-1]]
 
     c = SkyCoord(data["RA"], data["Dec"], frame="icrs", unit=(u.hourangle, u.deg))
     best_cand = np.argsort(data["SN"])[-1]
 
+    # number of beam pairs
     n_comb = math.factorial(len(data)) / (
         math.factorial(2) * math.factorial(len(data) - 2)
-    )  # number of beam pairs
+    )
 
     if not options.config:
         if options.source:
@@ -78,6 +79,7 @@ def readPSF(psf, clip):
     """
     Converts PSF in fits format to a numpy array
     """
+
     hdul = fits.open(psf)
     psf_ar = hdul[0].data
 
@@ -94,6 +96,7 @@ def readPSF(psf, clip):
 
 
 def write2fits(w, likelihood):
+
     header = w.to_header()
     hdu = fits.PrimaryHDU(header=header)
     hdu.data = likelihood
@@ -110,6 +113,7 @@ def readJSON(config):
 
     with open(config) as json_file:
         data = json.load(json_file)
+
     ra = data["beams"]["ca_target_request"]["tilings"][0]["target"].split(",")[2]
     dec = data["beams"]["ca_target_request"]["tilings"][0]["target"].split(",")[3]
     overlap = str(data["beams"]["ca_target_request"]["tilings"][0]["overlap"])
@@ -122,7 +126,9 @@ def get_best_pairs(data, npairs):
     If we want to do the localisation using only the N highest-S/N beam pairs
     for the sake of time, this determines which ones to use.
     """
+
     sums = []
+
     for i in range(0, len(data["SN"])):
         for j in range(0, len(data["SN"])):
             if i != j:
@@ -137,6 +143,7 @@ def getTicks(array_width, array_height, w, fineness):
     """
     Returns tick labels for a given size of numpy array.
     """
+
     try:
         num_ticks = min(array_width, array_height) / fineness
         ticks = [
@@ -191,9 +198,11 @@ def readSubbandingFiles(options):
         dataLocs["RA"], dataLocs["Dec"], frame="icrs", unit=(u.hourangle, u.deg)
     )
     best_cand = np.argsort(dataLocs["SNR"])[-1]
+
+    # number of beam pairs
     n_comb = math.factorial(len(dataLocs)) / (
         math.factorial(2) * math.factorial(len(dataLocs) - 2)
-    )  # number of beam pairs
+    )
 
     if not options.config:
         if options.source:
@@ -233,6 +242,7 @@ def readSubbandingFiles(options):
 def makeSubbandingPSFcube(options):
     psf0 = readPSF(options.psf[0], options.clipping[0])
     psfCube = np.zeros((psf0.shape[0], psf0.shape[1], len(options.psf)))
+
     for i in range(0, len(options.psf)):
         psfCube[:, :, i] = readPSF(options.psf[i], options.clipping[0])
 
@@ -243,6 +253,7 @@ def printCoords(max_loc, w):
     max_deg = []
     max_deg.append(co.pix2deg(max_loc, w)[0])
     max = SkyCoord(max_deg, unit="deg")
+
     print("\nMaximum likelihood at coordinates:")
     print(max.ra.deg[0], max.dec.deg[0])
     print(max.ra.to_string(u.hour)[0], max.dec.to_string(u.degree, alwayssign=True)[0])
