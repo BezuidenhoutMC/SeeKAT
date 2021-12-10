@@ -151,15 +151,15 @@ def make_map(array_height, array_width, c, psf_ar, options, data):
     for j in range(1, npairs + 1):
         comparison_snr = data["SN"][j]
         comparison_snrs_fake = fake_snrs[:, j]
+        # NB, ratios must always be comparison (lower SN) / beam (highest SN)
         sim_ratios = np.append(
             sim_ratios, (comparison_snrs_fake / beam_snrs_fake)[:, None], axis=1
-        )  # NB, ratios must always be comparison (lower SN) / beam (highest SN)
+        )
         obs_ratios = np.append(obs_ratios, (comparison_snr / beam_snr))
 
     C = np.cov(sim_ratios, rowvar=False)
 
     # make model and get residuals
-
     psf_ratios = np.zeros((array_height, array_width, npairs))
 
     cn = 0
@@ -167,7 +167,8 @@ def make_map(array_height, array_width, c, psf_ar, options, data):
     stdout.flush()
 
     beam_ar = np.zeros((array_height, array_width))
-    beam_snr = data["SN"][0]  # NB, beams must be sorted by S/N; highest first!
+    # NB, beams must be sorted by S/N; highest first!
+    beam_snr = data["SN"][0]
 
     dec_start = int(np.round(c.dec.px[0])) - int(psf_ar.shape[1] / 2)
     dec_end = int(np.round(c.dec.px[0])) + int(psf_ar.shape[1] / 2)
