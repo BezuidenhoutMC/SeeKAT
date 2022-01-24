@@ -22,7 +22,7 @@ Customisation options:
 
 --clip All values of the CB PSF below this value are set to zero. Helps negate low-level sidelobes.
 
---s In the format RA,Dec adds a marker for known coordinates to plot.
+--s In the format RA(hms),Dec(dms) adds a marker for known coordinates to plot.
 
 --scalebar Sets the length of the scalebar on the plot in arcseconds. Set to 0 to omit it altogether.
 
