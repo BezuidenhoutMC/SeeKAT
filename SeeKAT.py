@@ -63,7 +63,7 @@ def parseOptions(parser):
 	parser.add_argument('--s', dest='source',
 				nargs = 1,
 				type=str,
-				help="Draws given coordinate location (degrees) on localisation plot",
+				help="Draws given coordinate location (format: hms,dms) on localisation plot",
 				required = False)
 	parser.add_argument('--scalebar', dest='sb',
 						nargs = 1,
