@@ -29,3 +29,7 @@ Customisation options:
 --zoom Automatically zooms in on the TABs.
 
 --ticks Sets the spacing between axis ticks in number of pixels.
+
+--nsig Draws uncertainty contours up to this number of standard deviations.
+
+--fits Writes likelihood to fits file.
