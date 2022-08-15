@@ -20,74 +20,82 @@ import matplotlib.patches as patches
 
 
 def parseOptions(parser):
-	'''Options:
-	-f	Input file
-	--o	Fractional sensitivity level at which CBs are tiled to overlap
-	--r	Resolution of PSF in units of arcseconds per pixel
-	--n	Number of beams to consider when creating overlap contours. Will
-		pick the specified number of beams with the highest S/N values.
-	'''
+    '''Options:
+    -f    Input file
+    --o    Fractional sensitivity level at which CBs are tiled to overlap
+    --r    Resolution of PSF in units of arcseconds per pixel
+    --n    Number of beams to consider when creating overlap contours. Will
+        pick the specified number of beams with the highest S/N values.
+    '''
 
-	parser.add_argument('-l', dest='locFile', 
-				nargs = 1, 
-				type = str, 
-				required=True)
-	parser.add_argument('-c', dest='config', 
-				nargs = 1, 
-				type = str, 
-				help="Configuration (json) file",
-				required=False)
-	parser.add_argument('-s', dest='snrFile', 
-				nargs = 1, 
-				type = str, 
-				required=True)
-	parser.add_argument('-p',dest='psf',
+    parser.add_argument('-l', dest='locFile', 
+                nargs = 1, 
+                type = str, 
+                required=True)
+    parser.add_argument('-c', dest='config', 
+                nargs = 1, 
+                type = str, 
+                help="Configuration (json) file",
+                required=False)
+    parser.add_argument('-s', dest='snrFile', 
+                nargs = 1, 
+                type = str, 
+                required=True)
+    parser.add_argument('-p',dest='psf',
                                 type=str,
                                 nargs = '+', 
                                 help="PSF file",
                                 required=True)
-	parser.add_argument('--o', dest='overlap',
-				type = float,
-				help = "Fractional sensitivity level at which the coherent beams overlap",
-				default = 0.25,
-				required = False)
-	parser.add_argument('--r', dest='res',
-				nargs = 1,
-				type=float,
-				help="Distance in arcseconds represented by one pixel of the PSF",
-				default = 1,
-				required = True)
-	parser.add_argument('--n',dest='npairs',
-				nargs = 1,
-				type = int,
-				default = [1000000])
-	parser.add_argument('--s', dest='source',
-				nargs = 1,
-				type=str,
-				help="Draws given coordinate location (degrees) on localisation plot",
-				required = False)
-	parser.add_argument('--scalebar', dest='sb',
-						nargs = 1,
-						type = float,
-						help = "Length of scale bar on the localisation plot in arcseconds. Set to 0 to omit altogether",
-						default = [10],
-						required = False)
-	parser.add_argument('--ticks', dest='tickspacing',
-						nargs = 1,
-						type = float,
-						help = "Sets the number of pixels between ticks on the localisation plot",
-						default = [50],
-						required = False)
-	parser.add_argument('--clip', dest='clipping',
-						nargs = 1,
-						type = float,
-						help = "Sets values of the PSF below this number to zero. Helps minimise the influence of low-level sidelobes",
-						default = [0.08],
-						required = False)	
+    parser.add_argument('--o', dest='overlap',
+                type = float,
+                help = "Fractional sensitivity level at which the coherent beams overlap",
+                default = 0.25,
+                required = False)
+    parser.add_argument('--r', dest='res',
+                nargs = 1,
+                type=float,
+                help="Distance in arcseconds represented by one pixel of the PSF",
+                default = 1,
+                required = True)
+    parser.add_argument('--n',dest='npairs',
+                nargs = 1,
+                type = int,
+                default = [1000000])
+    parser.add_argument('--nsig',dest='nsig',
+                nargs = 1,
+                type = int,
+                help='Draws uncertainty contours up to this number of standard deviations.',
+                default = [2])
+    parser.add_argument('--s', dest='source',
+                nargs = 1,
+                type=str,
+                help="Draws given coordinate location (degrees) on localisation plot",
+                required = False)
+    parser.add_argument('--scalebar', dest='sb',
+                        nargs = 1,
+                        type = float,
+                        help = "Length of scale bar on the localisation plot in arcseconds. Set to 0 to omit altogether",
+                        default = [10],
+                        required = False)
+    parser.add_argument('--ticks', dest='tickspacing',
+                        nargs = 1,
+                        type = float,
+                        help = "Sets the number of pixels between ticks on the localisation plot",
+                        default = [50],
+                        required = False)
+    parser.add_argument('--clip', dest='clipping',
+                        nargs = 1,
+                        type = float,
+                        help = "Sets values of the PSF below this number to zero. Helps minimise the influence of low-level sidelobes",
+                        default = [0.08],
+                        required = False)    
+    parser.add_argument('--fits', dest='fitsOut',
+                        help = "Outputs .fits file of localisation region",
+                        action = 'store_true')   
 
-	options= parser.parse_args()
+    options= parser.parse_args()
 
-	return options
+    return options
 
 
 
@@ -126,7 +134,7 @@ if __name__ == "__main__":
         fullbandLogLikelihood+=loglikelihood#*np.max(subbandData["SN"])
         #fullbandLogLikelihood /= np.amax(fullbandLikelihood)
   
-    Splot.likelihoodPlot(f,ax,fullbandLogLikelihood,options)
+    Splot.likelihoodPlot(f,ax, w, fullbandLogLikelihood,options)
     max_deg = []
     max_loc = np.where(fullbandLogLikelihood==np.nanmax(fullbandLogLikelihood))
     if len(max_loc) == 2:
