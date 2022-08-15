@@ -10,7 +10,7 @@
 
 • Plots the likelihood function over RA and Dec with 1-sigma uncertainty, overlaid on the beam coordinates and sizes.
 
-<img src="https://user-images.githubusercontent.com/22096485/184672571-49ff4929-5ccf-4940-bf4c-03feb5e6b163.png" width="600">
+<img src="https://user-images.githubusercontent.com/22096485/184672571-49ff4929-5ccf-4940-bf4c-03feb5e6b163.png" width="400">
 
 Usage: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
 
