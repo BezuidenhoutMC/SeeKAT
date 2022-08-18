@@ -86,7 +86,8 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
     # Printing location of maximum likelihood
     max_loc = np.where(loglikelihood==np.nanmax(loglikelihood))
     ut.printCoords(max_loc, w)
-    if len(max_loc) == 2:
+    # print(max_loc)
+    if len(max_loc[0]) == 2:
         plt.axhline(max_loc[0], lw=1.2, c='#a8dadc', ls='--')
         plt.axvline(max_loc[1], lw=1.2, c='#a8dadc', ls='--')
 
@@ -117,7 +118,8 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
     ax_histx = f.add_axes([0.12, 0.855, 0.73, 0.1], sharex=ax)
     ax_histx.plot(np.sum(likelihood, axis=0),color='black')
     plt.setp(ax_histx.get_xticklabels(), visible=False)
-    ax_histx.vlines(max_loc[1], 0, np.max(np.sum(likelihood, axis=0)) ,
+    if len(max_loc[0]) == 2:
+        ax_histx.vlines(max_loc[1], 0, np.max(np.sum(likelihood, axis=0)) ,
                      lw=1.2, colors='#a8dadc', ls='--')
     
     ax_histy = f.add_axes([0.855, 0.1, 0.1, 0.75], sharey=ax)
@@ -125,7 +127,8 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
                     color='black')
     ax_histy.set_title('Likelihood', size=10)
     plt.setp(ax_histy.get_yticklabels(), visible=False)
-    ax_histy.hlines(max_loc[0], 0, np.max(np.sum(likelihood, axis=1)) ,
+    if len(max_loc[0]) == 2:
+        ax_histy.hlines(max_loc[0], 0, np.max(np.sum(likelihood, axis=1)) ,
                      lw=1.2, colors='#a8dadc', ls='--')
 
     ax.set_xlabel("RA ($^\circ$)", fontsize=15)

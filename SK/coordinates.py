@@ -32,7 +32,6 @@ def calcArraySize(c, boresightPx, psf):
     Calculates the size of numpy array needed to fit all the CBs simultaneously
     c must be a SkyCoord object
     """
-    
     dist_right = np.absolute(max(c.ra.px) - boresightPx[0])
     dist_left = np.absolute(min(c.ra.px) - boresightPx[0])
     dist_up = np.absolute(max(c.dec.px) - boresightPx[1])

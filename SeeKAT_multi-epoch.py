@@ -1,22 +1,21 @@
-#!/usr/bin/env python
-# Tiaan Bezuidenhout, 2020. For inquiries: bezmc93@gmail.com
-# NB: REQUIRES Python 3
-
 import argparse
 import numpy as np
+import math
 import matplotlib.pyplot as plt
-from sys import stdout
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 
+import sys
+#sys.path.append('/raid/tbez/SeeKAT/') #REMOVE
+
+import SK.plotting as Splot
 import SK.utils as ut
 import SK.coordinates as co
-import SK.plotting as Splot
-
-np.seterr(divide='ignore', invalid='ignore')
-
+import SeeKAT as SK
 
 def parseOptions(parser):
     '''Options:
-    -f    Input file with each line a different CB detection.
+    -f    Input files with each line a different CB detection.
         Should have 3 columns: RA (h:m:s), Dec (d:m:s), S/N
     -p    PSF of a CB in fits format
     --o    Fractional sensitivity level at which CBs are tiled to overlap
@@ -31,21 +30,21 @@ def parseOptions(parser):
     --zoom Automatically zooms in on the TABs.
     '''
 
-    parser.add_argument('-f', dest='file', 
-                nargs = 1, 
+    parser.add_argument('-f', dest='files', 
+                nargs = '+', 
                 type = str, 
-                help="Detections file",
+                help="Detections files",
+                required=True)
+    parser.add_argument('-p',dest='psfs',
+                nargs='+',
+                type=str,
+                help="PSF file",
                 required=True)
     parser.add_argument('-c', dest='config', 
                 nargs = 1, 
                 type = str, 
                 help="Configuration (json) file",
                 required=False)
-    parser.add_argument('-p',dest='psf',
-                nargs=1,
-                type=str,
-                help="PSF file",
-                required=True)
     parser.add_argument('--o', dest='overlap',
                 type = float,
                 help = "Fractional sensitivity level at which the coherent beams overlap",
@@ -101,110 +100,98 @@ def parseOptions(parser):
 
     return options
 
+def readCoordsME(options):
+    """
+    Checks that arguments make sense, and if so returns data read from input file. 
+    """
+    RAs = []
+    Decs = []
+    
+    data = np.concatenate([np.loadtxt(f,
+                delimiter=' ',
+                dtype=str,
+                encoding="ascii") for f in options.files])
 
-def place_beam(j, npairs, c, data, array_height, array_width, psf_ar, options, beam_ar):
-    stdout.write("\rAdding beam %d/%d..." % (j + 1, npairs + 1))
-    stdout.flush()
+    # Sorting beams by S/N, so that Gaussian assumption holds better. 
+    # You generally want LOW/HIGH S/N beam pairs.
+    data = data[np.argsort(data[:,2])[::-1]] 
 
-    plt.scatter(c.ra.px, c.dec.px, color='black', s=0.2)
+    c = SkyCoord(data[:,0], data[:,1], frame="icrs", unit=(u.hourangle, u.deg))
+    best_cand = np.argsort(data[:,2])[-1]
 
-    comparison_snr = data["SN"][j]
+    # Calculate number of beam pairs
+    n_comb = math.factorial(len(data))/(math.factorial(2)*
+                            math.factorial(len(data)-2)) 
 
-    comparison_ar = np.zeros((array_height, array_width))
-
-    dec_start = int(np.round(c.dec.px[j])) - int(psf_ar.shape[1] / 2)
-    dec_end = int(np.round(c.dec.px[j])) + int(psf_ar.shape[1] / 2)
-    ra_start = int(np.round(c.ra.px[j])) - int(psf_ar.shape[0] / 2)
-    ra_end = int(np.round(c.ra.px[j])) + int(psf_ar.shape[0] / 2)
-    comparison_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
-                
-    plt.contour(comparison_ar, levels=[options.overlap], 
-                colors='black', linewidths=0.5)
-    plt.contour(beam_ar, levels=[options.overlap], 
-                colors='black', linewidths=0.5)
-
-    return comparison_ar / beam_ar
-
-
-def make_map(array_height, array_width, c, psf_ar, options, data):
-    if options.npairs[0] > 2 and options.npairs[0] + 1 <= len(c):
-        npairs = options.npairs[0] - 1
+    if options.source:
+            [ra,dec] = options.source[0].split(',')
+            b = SkyCoord(ra, dec, frame='icrs',unit=(u.hourangle, u.deg))
+            boresightCoord = [b.ra.deg,b.dec.deg]
     else:
-        npairs = len(c) - 1
+            bs_c = SkyCoord(data[:,0][best_cand],data[:,1][best_cand], frame='icrs', unit=(u.hourangle, u.deg))
+            boresightCoord = [bs_c.ra.deg,bs_c.dec.deg]
 
-    loglikelihood = np.zeros((array_height, array_width))
+    if options.overlap > 1.0 or options.overlap < 0:
+            print("The OVERLAP parameter must be between 0 and 1")
+            exit()
 
-    nit = 1000  # number of iterations for covariance matrix
+    elif options.npairs[0] > n_comb:
+            options.npairs[0] = n_comb
+            return data, c, boresightCoord
+    else:
+            return data, c, boresightCoord
 
-    fake_snrs = data["SN"][None,:] + np.random.randn(nit * len(c)).reshape(nit, len(c))
 
-    # make covariance matrix
-    beam_snr = data["SN"][0]
-    beam_snrs_fake = fake_snrs[:,0]
+def deg2pixME(w, c, psf, boresight, res):
+    """
+    Converts coordinates from degrees to pixels
+    c must be a SkyCoord object and psf a numpy array.
+    """
 
-    sim_ratios = np.transpose([fake_snrs[:, j] / beam_snrs_fake for j in np.arange(1,npairs+1)])
-    obs_ratios = np.transpose([data["SN"][j] / beam_snr for j in np.arange(1,npairs+1)])
+    coordsDeg = []
+    for i in range(0, len(c)):
+        coordsDeg.append([c.ra.deg[i], c.dec.deg[i]])
 
-    C = np.cov(sim_ratios, rowvar=False)
+    ### Convert deg -> pix
+    px = w.all_world2pix(coordsDeg, 1)
+    c.ra.px = px[:, 0]
+    c.dec.px = px[:, 1]
 
-    # make model and get residuals
-    stdout.write("\rAdding beam %d/%d..." % (1, npairs+1))
-    stdout.flush()
-
-    beam_ar = np.zeros((array_height, array_width))
-    beam_snr = data["SN"][0]  # NB, beams must be sorted by S/N; highest first!
-
-    dec_start = int(np.round(c.dec.px[0])) - int(psf_ar.shape[1] / 2)
-    dec_end = int(np.round(c.dec.px[0])) + int(psf_ar.shape[1] / 2)
-    ra_start = int(np.round(c.ra.px[0])) - int(psf_ar.shape[0] / 2)
-    ra_end = int(np.round(c.ra.px[0])) + int(psf_ar.shape[0] / 2)
-
-    beam_ar[dec_start : dec_end, ra_start : ra_end] = psf_ar
-    plt.contour(beam_ar, levels=[options.overlap],
-                colors='black', linewidths=0.5, linestyles='dashed') # shows beam sizes
-
-    psf_ratios = np.transpose([place_beam(j, npairs, c, data, array_height, 
-                        array_width, psf_ar, options, beam_ar) 
-                        for j in np.arange(1, npairs+1)], axes=(1,2,0))
-
-    resids = np.transpose([obs_ratios[i] - psf_ratios[:,:,i] for i in np.arange(0, npairs)], 
-                        axes=(1,2,0))
-
-    chi2 = np.sum(resids * np.sum(np.linalg.inv(C)[None,None,:,:] *
-           resids[:,:,:,None],axis=2),axis=2)
-
-    chi2[chi2 == np.inf] = np.nan
-    loglikelihood = -0.5 * chi2
-
-    return loglikelihood
+    return c
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     options = parseOptions(parser)
-    
-    data, c, boresight = ut.readCoords(options)
-
-    psf_ar = ut.readPSF(options.psf[0], options.clipping[0])
-    
-    c, w, array_width, array_height = co.deg2pix(c, psf_ar, 
-    								boresight, options.res[0])
 
     f, ax = plt.subplots(figsize=(10,10))
+    
+    psf_ar = ut.readPSF(options.psfs[0], options.clipping[0])
+    data, c, boresight = readCoordsME(options)
+    c, w, array_width, array_height = co.deg2pix(c, psf_ar, boresight, options.res[0])
+
+    for i in enumerate(options.files):
+        options.file = [i[1]]
+        print('\n' + options.file[0])
+        options.psf = [options.psfs[i[0]]]
+        data, c1, _ = ut.readCoords(options)
+
+        psf_ar = ut.readPSF(options.psf[0], options.clipping[0])
+        
+        c1 = deg2pixME(w, c1, psf_ar, boresight, options.res[0])
+
+        loglikelihood = np.zeros((array_height,array_width))
+        loglikelihood += SK.make_map(array_height, array_width,
+                             c1, psf_ar, options, data)
 
     if options.source:
         Splot.plot_known(w, options.source[0])
     
-    loglikelihood = make_map(array_height, array_width,
-    						 c, psf_ar, options, data)
-
     Splot.make_ticks(ax, array_width, array_height, 
                     w, fineness=options.tickspacing[0])
 
-    print("\nPlotting...")
     Splot.likelihoodPlot(f, ax, w, loglikelihood, options)
-    
+
     if options.autozoom == True:
         ut.autozoom(ax, c, options)
 

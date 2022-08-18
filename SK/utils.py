@@ -69,6 +69,63 @@ def readCoords(options):
             return data, c, boresightCoord
 
 
+def readCoordsME(options):
+    """
+    Checks that arguments make sense, and if so returns data read from input file. 
+    """
+    RAs = []
+    Decs = []
+    for file in options.files:
+        data = np.genfromtxt(file,
+                delimiter=' ',
+                dtype=None,
+                names=["RA", "Dec", "SN"],
+                encoding="ascii")
+        RAs.append(data['RA'])
+        Decs.append(data['Dec'])
+
+    print(RAs,Decs)
+    # Sorting beams by S/N, so that Gaussian assumption holds better. 
+    # You generally want LOW/HIGH S/N beam pairs.
+    data = data[np.argsort(data["SN"])[::-1]] 
+
+    c = SkyCoord(data["RA"],data["Dec"], frame="icrs",unit=(u.hourangle, u.deg))
+    best_cand = np.argsort(data["SN"])[-1]
+
+    # Calculate number of beam pairs
+    n_comb = math.factorial(len(data))/(math.factorial(2)*
+                            math.factorial(len(data)-2)) 
+
+    if not options.config:
+        if options.source:
+            [ra,dec] = options.source[0].split(',')
+            b = SkyCoord(ra, dec, frame='icrs',unit=(u.hourangle, u.deg))
+            boresightCoord = [b.ra.deg,b.dec.deg]
+        else:
+            bs_c = SkyCoord(data["RA"][best_cand],data["Dec"][best_cand], frame='icrs', unit=(u.hourangle, u.deg))
+            boresightCoord = [bs_c.ra.deg,bs_c.dec.deg]
+
+        if options.overlap > 1.0 or options.overlap < 0:
+            print("The OVERLAP parameter must be between 0 and 1")
+            exit()
+
+        elif options.npairs[0] > n_comb:
+            options.npairs[0] = n_comb
+            return data, c, boresightCoord
+        else:
+            return data, c, boresightCoord
+    else:
+        ra, dec, options.overlap = readJSON(options.config[0])
+        b = SkyCoord(ra, dec, frame='icrs',unit=(u.hourangle, u.deg))
+        boresightCoord = [b.ra.deg, b.dec.deg]
+
+        if options.npairs[0] > n_comb:
+            options.npairs[0] = n_comb
+            return data, c, boresightCoord
+        else:
+            return data, c, boresightCoord
+
+
 def readPSF(psf,clip):
     """
     Converts PSF in fits format to a numpy array
