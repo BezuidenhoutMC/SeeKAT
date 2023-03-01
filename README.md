@@ -12,26 +12,26 @@
 
 <img src="https://user-images.githubusercontent.com/22096485/184672571-49ff4929-5ccf-4940-bf4c-03feb5e6b163.png" width="400">
 
-Usage: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
+<u>Usage></u>: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
 
 OR
 
 python SeeKAT.py -f {coordinates file} -p {.fits file} --c {.json file} --r {PSF resolution}
 
-Customisation options:
+<u>Customisation options</u>:
 
---n Computes the likelihood map using only the n brightest pairs of beams.
+<b>>--n</b> Computes the likelihood map using only the n brightest pairs of beams.
 
---clip All values of the CB PSF below this value are set to zero. Helps negate low-level sidelobes.
+<b>--clip</b> All values of the CB PSF below this value are set to zero. Helps negate low-level sidelobes.
 
---s In the format RA(hms),Dec(dms) adds a marker for known coordinates to plot.
+<b>--s</b> In the format RA(hms),Dec(dms) adds a marker for known coordinates to plot.
 
---scalebar Sets the length of the scalebar on the plot in arcseconds. Set to 0 to omit it altogether.
+<b>--scalebar</b> Sets the length of the scalebar on the plot in arcseconds. Set to 0 to omit it altogether.
 
---zoom Automatically zooms in on the TABs.
+<b>--zoom</b> Automatically zooms in on the TABs.
 
---ticks Sets the spacing between axis ticks in number of pixels.
+<b>--ticks</b> Sets the spacing between axis ticks in number of pixels.
 
---nsig Draws uncertainty contours up to this number of standard deviations.
+<b>--nsig</b> Draws uncertainty contours up to this number of standard deviations.
 
---fits Writes likelihood to fits file.
+<b>--fits</b> Writes likelihood to fits file.
