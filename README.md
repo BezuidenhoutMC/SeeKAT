@@ -12,7 +12,7 @@
 
 <img src="https://user-images.githubusercontent.com/22096485/184672571-49ff4929-5ccf-4940-bf4c-03feb5e6b163.png" width="400">
 
-<ins>Usage></ins>: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
+<ins>Usage</ins>: python SeeKAT.py -f {coordinates file} -p {.fits file} --r {PSF resolution} --o {fractional overlap}
 
 OR
 
@@ -20,7 +20,7 @@ python SeeKAT.py -f {coordinates file} -p {.fits file} --c {.json file} --r {PSF
 
 <ins>Customisation options</ins>:
 
-<b>>--n</b> Computes the likelihood map using only the n brightest pairs of beams.
+<b>--n</b> Computes the likelihood map using only the n brightest pairs of beams.
 
 <b>--clip</b> All values of the CB PSF below this value are set to zero. Helps negate low-level sidelobes.
 
