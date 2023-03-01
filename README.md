@@ -1,4 +1,4 @@
-# SeeKAT multibeam localiser
+<!-- # SeeKAT multibeam localiser -->
 
 • Reads in list of detections (RA, Dec, S/N) and the beam PSF. PSFs can be modelled using MOSAIC (https://github.com/wchenastro/Mosaic).
 
