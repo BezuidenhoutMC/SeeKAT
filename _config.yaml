@@ -1,0 +1,4 @@
+title: SeeKAT tied-array beam localiser
+description: Likelihood estimation for the coordinates of a transient detected in multiple tied-array beams.
+show_downloads: true
+remote_theme: benbalter/retlab
