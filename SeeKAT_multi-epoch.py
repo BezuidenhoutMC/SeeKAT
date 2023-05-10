@@ -181,6 +181,8 @@ if __name__ == "__main__":
         c1 = deg2pixME(w, c1, psf_ar, boresight, options.res[0])
 
         loglikelihood = np.zeros((array_height,array_width))
+        options.npairs[0] = math.factorial(len(c1))/(math.factorial(2)*
+                            math.factorial(len(c1)-2))
         loglikelihood += SK.make_map(array_height, array_width,
                              c1, psf_ar, options, data)
 
