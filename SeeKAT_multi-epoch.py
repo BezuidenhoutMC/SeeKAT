@@ -45,7 +45,8 @@ def parseOptions(parser):
                 type = str, 
                 help="Configuration (json) file",
                 required=False)
-    parser.add_argument('--o', dest='overlap',
+    parser.add_argument('--o', dest='overlaps',
+                nargs='+',
                 type = float,
                 help = "Fractional sensitivity level at which the coherent beams overlap",
                 default = 0.25,
@@ -167,13 +168,21 @@ if __name__ == "__main__":
     f, ax = plt.subplots(figsize=(10,10))
     
     psf_ar = ut.readPSF(options.psfs[0], options.clipping[0])
+    
+    options.overlap = options.overlaps[0]
     data, c, boresight = readCoordsME(options)
+
     c, w, array_width, array_height = co.deg2pix(c, psf_ar, boresight, options.res[0])
 
     for i in enumerate(options.files):
         options.file = [i[1]]
         print('\n' + options.file[0])
         options.psf = [options.psfs[i[0]]]
+        if len(options.overlaps)==len(options.files):
+            options.overlap = options.overlaps[i[0]]
+        else:
+            options.overlap = options.overlaps[0]
+
         data, c1, _ = ut.readCoords(options)
 
         psf_ar = ut.readPSF(options.psf[0], options.clipping[0])
