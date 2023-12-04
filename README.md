@@ -1,4 +1,7 @@
 <!-- # SeeKAT multibeam localiser -->
+NB: If you use SeeKAT for a publication, please cite my paper: https://ui.adsabs.harvard.edu/abs/2023RASTI...2..114B
+
+NB: A browser-based interactive app version of SeeKAT is now available here: https://github.com/BezuidenhoutMC/SeeKAT-app/
 
 • Reads in list of detections (RA, Dec, S/N) and the beam PSF. PSFs can be modelled using MOSAIC (https://github.com/wchenastro/Mosaic).
 
