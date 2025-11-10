@@ -5,9 +5,20 @@
 """
 Plotting tools.
 """
+import matplotlib.pyplot as plt
+
+# Make text larger for readability on graphs
+plt.rcParams['xtick.labelsize'] = 18
+plt.rcParams['ytick.labelsize'] = 18
+plt.rcParams['font.size'] = 22
+# Set same fonts as my LaTeX document
+plt.rcParams['font.family'] = 'STIXGeneral' 
+plt.rcParams['mathtext.fontset'] = 'stix'
+# Other plotting params
+plt.rcParams['figure.figsize'] = [10,10]
 
 import numpy as np
-import matplotlib.pyplot as plt
+
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
@@ -46,9 +57,9 @@ def make_ticks(ax, array_width, array_height, w, fineness):
     ra_deg= np.around(labels[:, 0], 4)
     dec_deg = np.around(labels[:, 1], 4)
     ax.set_xticks(ticks[0])
-    ax.set_xticklabels(ra_deg, rotation=40, fontsize=12)
+    ax.set_xticklabels(ra_deg)
     ax.set_yticks(ticks[1])
-    ax.set_yticklabels(dec_deg, fontsize=12)
+    ax.set_yticklabels(dec_deg)
 
 
 def likelihoodPlot(f, ax, w, loglikelihood, options):
@@ -62,14 +73,14 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["#FFFFFF","#1E88E5"])
 
     plt.imshow(likelihood, origin='lower', cmap=cmap, aspect="auto")
-    plt.subplots_adjust(left=0.12, right=0.85, bottom=0.1, top=0.85)
+    plt.subplots_adjust(left=0.17, right=0.85, bottom=0.1, top=0.85)
 
     plt.scatter(np.where(likelihood==np.amax(likelihood))[1],
                 np.where(likelihood==np.amax(likelihood))[0], 
                 marker='x', c='red')
 
     ## Making adjustable scale bar 
-    fontprops = fm.FontProperties(size=14)   
+    fontprops = fm.FontProperties(size=18)   
     if options.sb[0] != 0:
         scalebar = AnchoredSizeBar(ax.transData,
                            int(options.sb[0]/options.res[0]), 
@@ -115,7 +126,7 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
         ut.printError(max_loc, w, error, s)
 
     ## Making axis histograms
-    ax_histx = f.add_axes([0.12, 0.855, 0.73, 0.1], sharex=ax)
+    ax_histx = f.add_axes([0.17, 0.855, 0.68, 0.1], sharex=ax)
     ax_histx.plot(np.sum(likelihood, axis=0),color='black')
     plt.setp(ax_histx.get_xticklabels(), visible=False)
     if len(max_loc[0]) == 2:
@@ -125,11 +136,14 @@ def likelihoodPlot(f, ax, w, loglikelihood, options):
     ax_histy = f.add_axes([0.855, 0.1, 0.1, 0.75], sharey=ax)
     ax_histy.plot(np.sum(likelihood, axis=1),np.arange(0,likelihood.shape[0]), 
                     color='black')
-    ax_histy.set_title('Likelihood', size=10)
+    ax_histy.set_title('Likelihood', size=15)
     plt.setp(ax_histy.get_yticklabels(), visible=False)
     if len(max_loc[0]) == 2:
         ax_histy.hlines(max_loc[0], 0, np.max(np.sum(likelihood, axis=1)) ,
                      lw=1.2, colors='#a8dadc', ls='--')
 
-    ax.set_xlabel("RA ($^\circ$)", fontsize=15)
-    ax.set_ylabel("Dec ($^\circ$)", fontsize=15)
+    ax.set_xlabel("RA (deg)")
+    ax.set_ylabel("Dec (deg)")
+
+
+    
